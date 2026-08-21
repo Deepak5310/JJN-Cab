@@ -15,11 +15,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,11 +31,22 @@ import androidx.compose.ui.unit.dp
 import com.deecode.myapp.domain.model.Booking
 import com.deecode.myapp.domain.model.BookingStatus
 import com.deecode.myapp.ui.components.JJNCard
+import com.deecode.myapp.ui.components.JJNOutlinedButton
 import com.deecode.myapp.ui.components.JJNOutlinedCard
 import com.deecode.myapp.ui.components.JJNPrimaryButton
+import com.deecode.myapp.ui.components.dialog.CancellationReasonBottomSheet
 import com.deecode.myapp.ui.theme.spacing
 import java.text.NumberFormat
 import java.util.Locale
+
+private val DriverCancellationReasons = listOf(
+    "Passenger requested cancellation",
+    "Passenger did not show up (No-show)",
+    "Vehicle issue / Mechanical breakdown",
+    "Road blocked / Unreachable pickup",
+    "Emergency / Unable to complete trip",
+    "Other reason"
+)
 
 @Composable
 fun DriverActiveRideScreen(
@@ -42,10 +56,13 @@ fun DriverActiveRideScreen(
     rideStatusError: String?,
     onUpdateStatus: (BookingStatus) -> Unit,
     onCompleteRide: () -> Unit,
+    onCancelRide: (reason: String) -> Unit,
     onClearError: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
+    var showCancelDialog by remember { mutableStateOf(false) }
+
     val currencyFormat = NumberFormat.getCurrencyInstance(Locale.Builder().setLanguage("en").setRegion("IN").build()).apply {
         maximumFractionDigits = 0
     }
@@ -378,6 +395,30 @@ fun DriverActiveRideScreen(
                     }
                 }
                 else -> Unit
+            }
+
+            // Driver Cancel Action
+            if (activeBooking.status.isActive) {
+                Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
+                JJNOutlinedButton(
+                    text = "Cancel Ride",
+                    onClick = { showCancelDialog = true },
+                    enabled = !isUpdatingStatus,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            if (showCancelDialog) {
+                CancellationReasonBottomSheet(
+                    title = "Cancel Ride (Driver)",
+                    reasons = DriverCancellationReasons,
+                    isLoading = isUpdatingStatus,
+                    onConfirm = { reason ->
+                        onCancelRide(reason)
+                        showCancelDialog = false
+                    },
+                    onDismiss = { showCancelDialog = false }
+                )
             }
         }
     }

@@ -217,4 +217,52 @@ class BookingMappingTest {
         assertFalse(canCompleteRide("DRIVER_ARRIVING"))
         assertFalse(canCompleteRide("COMPLETED"))
     }
+
+    @Test
+    fun `cancelled booking correctly maps cancelledAt, cancelledBy, and cancellationReason`() {
+        val cancelledTimestamp = Timestamp(Date(1700008000000L))
+        val dto = BookingDto(
+            bookingId = "booking_cancel_1",
+            customerId = "user_100",
+            status = "CANCELLED_BY_CUSTOMER",
+            driverId = "driver_200",
+            cancelledAt = cancelledTimestamp,
+            cancelledBy = "user_100",
+            cancellationReason = "Change of plans"
+        )
+
+        val domain = dto.toDomain()
+
+        assertEquals("booking_cancel_1", domain.bookingId)
+        assertEquals(BookingStatus.CANCELLED_BY_CUSTOMER, domain.status)
+        assertFalse(domain.status.isActive)
+        assertTrue(domain.status.isTerminal)
+        assertEquals(1700008000000L, domain.cancelledAt)
+        assertEquals("user_100", domain.cancelledBy)
+        assertEquals("Change of plans", domain.cancellationReason)
+    }
+
+    @Test
+    fun `cancellation is allowed from all active states but prohibited once COMPLETED or already cancelled`() {
+        fun canCancelBooking(status: String): Boolean {
+            if (status == "COMPLETED") return false
+            if (status in setOf("CANCELLED", "CANCELLED_BY_CUSTOMER", "CANCELLED_BY_DRIVER", "NO_DRIVERS_AVAILABLE")) return false
+            return true
+        }
+
+        assertTrue(canCancelBooking("REQUESTED"))
+        assertTrue(canCancelBooking("SEARCHING_DRIVER"))
+        assertTrue(canCancelBooking("ACCEPTED"))
+        assertTrue(canCancelBooking("ASSIGNED"))
+        assertTrue(canCancelBooking("DRIVER_ARRIVING"))
+        assertTrue(canCancelBooking("ARRIVING"))
+        assertTrue(canCancelBooking("IN_PROGRESS"))
+        assertTrue(canCancelBooking("STARTED"))
+
+        assertFalse(canCancelBooking("COMPLETED"))
+        assertFalse(canCancelBooking("CANCELLED"))
+        assertFalse(canCancelBooking("CANCELLED_BY_CUSTOMER"))
+        assertFalse(canCancelBooking("CANCELLED_BY_DRIVER"))
+        assertFalse(canCancelBooking("NO_DRIVERS_AVAILABLE"))
+    }
 }

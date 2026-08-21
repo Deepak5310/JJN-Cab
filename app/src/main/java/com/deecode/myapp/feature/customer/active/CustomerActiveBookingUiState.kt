@@ -14,11 +14,13 @@ data class CustomerActiveBookingUiState(
     val booking: Booking? = null,
     val driverLocation: LocationPoint? = null,
     val hasLocationPermission: Boolean = false,
+    val isCancelling: Boolean = false,
+    val cancellationError: String? = null,
     val errorMessage: String? = null
 ) : UiState {
     val formattedFare: String
         get() {
-            val fare = booking?.estimatedFare ?: 0.0
+            val fare = booking?.finalFare ?: booking?.estimatedFare ?: 0.0
             val format = NumberFormat.getCurrencyInstance(Locale.Builder().setLanguage("en").setRegion("IN").build())
             format.maximumFractionDigits = 0
             return format.format(fare)
@@ -26,7 +28,7 @@ data class CustomerActiveBookingUiState(
 
     val formattedDistance: String
         get() {
-            val meters = booking?.distanceMeters ?: 0
+            val meters = booking?.finalDistanceMeters ?: booking?.distanceMeters ?: 0
             return if (meters < 1000) {
                 "$meters m"
             } else {
@@ -36,7 +38,7 @@ data class CustomerActiveBookingUiState(
 
     val formattedDuration: String
         get() {
-            val seconds = booking?.estimatedDurationSeconds ?: 0L
+            val seconds = booking?.finalDurationSeconds ?: booking?.estimatedDurationSeconds ?: 0L
             val minutes = seconds / 60
             return "$minutes min"
         }
@@ -53,4 +55,6 @@ data class CustomerActiveBookingUiState(
 sealed interface CustomerActiveBookingUiEvent : UiEvent {
     data object Retry : CustomerActiveBookingUiEvent
     data object ClearError : CustomerActiveBookingUiEvent
+    data class CancelBooking(val bookingId: String, val reason: String) : CustomerActiveBookingUiEvent
+    data object ClearCancellationError : CustomerActiveBookingUiEvent
 }

@@ -119,4 +119,11 @@ class BookingRepositoryImpl @Inject constructor(
             finalDurationSeconds = finalDurationSeconds
         )
     }
+
+    override suspend fun cancelBooking(
+        bookingId: String,
+        reason: String
+    ): Resource<Unit> = withContext(dispatchers.io) {
+        remoteDataSource.cancelBooking(bookingId, reason)
+    }
 }

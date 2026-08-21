@@ -22,4 +22,5 @@ interface BookingRepository {
         finalDistanceMeters: Int? = null,
         finalDurationSeconds: Long? = null
     ): Resource<Unit>
+    suspend fun cancelBooking(bookingId: String, reason: String): Resource<Unit>
 }

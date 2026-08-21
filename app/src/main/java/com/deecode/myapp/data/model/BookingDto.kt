@@ -46,7 +46,11 @@ data class BookingDto(
     val completedAt: Timestamp? = null,
     val finalFare: Double? = null,
     val finalDistanceMeters: Int? = null,
-    val finalDurationSeconds: Long? = null
+    val finalDurationSeconds: Long? = null,
+    @ServerTimestamp
+    val cancelledAt: Timestamp? = null,
+    val cancelledBy: String? = null,
+    val cancellationReason: String? = null
 ) {
     fun toDomain(): Booking = Booking(
         bookingId = bookingId,
@@ -61,6 +65,7 @@ data class BookingDto(
                 "ASSIGNED" -> BookingStatus.ACCEPTED
                 "ARRIVING" -> BookingStatus.DRIVER_ARRIVING
                 "STARTED" -> BookingStatus.IN_PROGRESS
+                "CANCELLED" -> BookingStatus.CANCELLED
                 else -> BookingStatus.valueOf(status)
             }
         } catch (e: Exception) {
@@ -72,7 +77,10 @@ data class BookingDto(
         completedAt = completedAt?.toDate()?.time,
         finalFare = finalFare,
         finalDistanceMeters = finalDistanceMeters,
-        finalDurationSeconds = finalDurationSeconds
+        finalDurationSeconds = finalDurationSeconds,
+        cancelledAt = cancelledAt?.toDate()?.time,
+        cancelledBy = cancelledBy,
+        cancellationReason = cancellationReason
     )
 
     companion object {
@@ -88,7 +96,9 @@ data class BookingDto(
             driverId = booking.driverId,
             finalFare = booking.finalFare,
             finalDistanceMeters = booking.finalDistanceMeters,
-            finalDurationSeconds = booking.finalDurationSeconds
+            finalDurationSeconds = booking.finalDurationSeconds,
+            cancelledBy = booking.cancelledBy,
+            cancellationReason = booking.cancellationReason
         )
     }
 }

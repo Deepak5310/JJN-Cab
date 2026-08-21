@@ -26,6 +26,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,8 +42,17 @@ import com.deecode.myapp.ui.components.JJNLoadingIndicator
 import com.deecode.myapp.ui.components.JJNOutlinedButton
 import com.deecode.myapp.ui.components.JJNOutlinedCard
 import com.deecode.myapp.ui.components.JJNPrimaryButton
+import com.deecode.myapp.ui.components.dialog.CancellationReasonBottomSheet
 import com.deecode.myapp.ui.components.map.JJNMap
 import com.deecode.myapp.ui.theme.spacing
+
+private val CustomerCancellationReasons = listOf(
+    "Change of plans / No longer needed",
+    "Driver taking too long to arrive",
+    "Wrong pickup or destination location",
+    "Found alternative transport",
+    "Other reason"
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,6 +63,7 @@ fun CustomerActiveBookingScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
+    var showCancelDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -116,6 +129,27 @@ fun CustomerActiveBookingScreen(
                 }
             }
 
+            // Cancellation Error
+            if (!uiState.cancellationError.isNullOrBlank()) {
+                JJNCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = MaterialTheme.spacing.medium),
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer
+                ) {
+                    Text(
+                        text = uiState.cancellationError ?: "",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
+                    JJNOutlinedButton(
+                        text = "Dismiss",
+                        onClick = { viewModel.onEvent(CustomerActiveBookingUiEvent.ClearCancellationError) }
+                    )
+                }
+            }
+
             val booking = uiState.booking
             if (booking == null) {
                 // Empty State
@@ -153,11 +187,20 @@ fun CustomerActiveBookingScreen(
             } else {
                 // Active Booking Details
                 // 1. Live Status Header
+                val isCancelled = booking.status in setOf(
+                    BookingStatus.CANCELLED,
+                    BookingStatus.CANCELLED_BY_CUSTOMER,
+                    BookingStatus.CANCELLED_BY_DRIVER
+                )
+
                 Box(
                     modifier = Modifier
                         .size(72.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer),
+                        .background(
+                            if (isCancelled) MaterialTheme.colorScheme.errorContainer
+                            else MaterialTheme.colorScheme.primaryContainer
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -165,7 +208,9 @@ fun CustomerActiveBookingScreen(
                             BookingStatus.REQUESTED, BookingStatus.SEARCHING_DRIVER -> "🚕"
                             BookingStatus.ACCEPTED, BookingStatus.DRIVER_ARRIVING -> "🚘"
                             BookingStatus.IN_PROGRESS -> "🏎️"
-                            else -> "🏁"
+                            BookingStatus.COMPLETED -> "🏁"
+                            BookingStatus.CANCELLED, BookingStatus.CANCELLED_BY_CUSTOMER, BookingStatus.CANCELLED_BY_DRIVER -> "❌"
+                            else -> "📍"
                         },
                         style = MaterialTheme.typography.headlineLarge
                     )
@@ -181,11 +226,14 @@ fun CustomerActiveBookingScreen(
                         BookingStatus.DRIVER_ARRIVING -> "Driver Arriving"
                         BookingStatus.IN_PROGRESS -> "Trip in Progress"
                         BookingStatus.COMPLETED -> "Ride Completed 🏁"
+                        BookingStatus.CANCELLED_BY_CUSTOMER -> "Ride Cancelled"
+                        BookingStatus.CANCELLED_BY_DRIVER -> "Cancelled by Driver"
+                        BookingStatus.CANCELLED -> "Ride Cancelled"
                         else -> "Ride Status: ${booking.status.name}"
                     },
                     style = MaterialTheme.typography.headlineSmall.copy(
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
+                        color = if (isCancelled) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onBackground
                     )
                 )
 
@@ -197,6 +245,9 @@ fun CustomerActiveBookingScreen(
                         BookingStatus.DRIVER_ARRIVING -> "Driver is heading towards your pickup point."
                         BookingStatus.IN_PROGRESS -> "You are on your way to destination."
                         BookingStatus.COMPLETED -> "You have reached your destination. Thank you for riding with JJN Cab!"
+                        BookingStatus.CANCELLED_BY_CUSTOMER -> "You cancelled this booking: ${booking.cancellationReason ?: "Change of plans"}"
+                        BookingStatus.CANCELLED_BY_DRIVER -> "Driver had to cancel: ${booking.cancellationReason ?: "Unavailable"}"
+                        BookingStatus.CANCELLED -> "This ride has been cancelled."
                         else -> "Current status: ${booking.status.name}"
                     },
                     style = MaterialTheme.typography.bodyMedium.copy(
@@ -206,59 +257,63 @@ fun CustomerActiveBookingScreen(
 
                 Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
 
-                // 2. Live Map Card with Pickup, Destination, and Driver Live Location
-                JJNOutlinedCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                    contentPadding = 0.dp
-                ) {
-                    JJNMap(
-                        modifier = Modifier.fillMaxSize(),
-                        pickupLocation = booking.pickup,
-                        destinationLocation = booking.destination,
-                        driverLocation = uiState.driverLocation,
-                        hasLocationPermission = uiState.hasLocationPermission
-                    )
-                }
+                // 2. Live Map Card
+                if (!isCancelled) {
+                    JJNOutlinedCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        contentPadding = 0.dp
+                    ) {
+                        JJNMap(
+                            modifier = Modifier.fillMaxSize(),
+                            pickupLocation = booking.pickup,
+                            destinationLocation = booking.destination,
+                            driverLocation = uiState.driverLocation,
+                            hasLocationPermission = uiState.hasLocationPermission
+                        )
+                    }
 
-                Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+                }
 
                 // 3. Real-time Status Card
                 JJNCard(
                     modifier = Modifier.fillMaxWidth(),
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    containerColor = if (isCancelled) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = if (isCancelled) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimaryContainer,
                     contentPadding = MaterialTheme.spacing.medium
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                        if (booking.status.isActive) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        } else {
+                            Text(text = if (isCancelled) "❌" else "🏁", style = MaterialTheme.typography.titleMedium)
+                        }
                         Spacer(modifier = Modifier.width(MaterialTheme.spacing.medium))
                         Column {
                             Text(
                                 text = "Status: ${booking.status.name}",
                                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
                             )
-                            if (uiState.driverLocation != null) {
+                            if (uiState.driverLocation != null && booking.status.isActive) {
                                 Text(
                                     text = "🟢 Live driver location active",
                                     style = MaterialTheme.typography.labelSmall.copy(
                                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.9f)
                                     )
                                 )
-                            } else if (uiState.formattedCreatedAt.isNotBlank()) {
+                            } else if (booking.cancellationReason != null) {
                                 Text(
-                                    text = "Requested at: ${uiState.formattedCreatedAt}",
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                                    )
+                                    text = "Reason: ${booking.cancellationReason}",
+                                    style = MaterialTheme.typography.labelSmall
                                 )
                             }
                         }
@@ -366,7 +421,7 @@ fun CustomerActiveBookingScreen(
 
                         Column(horizontalAlignment = Alignment.End) {
                             Text(
-                                text = "Estimated Fare",
+                                text = if (booking.status == BookingStatus.COMPLETED) "Final Fare" else "Estimated Fare",
                                 style = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
                             )
                             Text(
@@ -382,6 +437,23 @@ fun CustomerActiveBookingScreen(
 
                 Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
 
+                // Actions: Cancel Ride when Active, or Back to Home when completed/cancelled
+                if (booking.status.isActive) {
+                    JJNOutlinedButton(
+                        text = "Cancel Ride",
+                        onClick = { showCancelDialog = true },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                } else {
+                    JJNPrimaryButton(
+                        text = "Back to Home",
+                        onClick = onNavigateBack,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+
                 // Booking Reference Pill
                 Text(
                     text = "Booking Ref: #${booking.bookingId.takeLast(10)}",
@@ -390,13 +462,18 @@ fun CustomerActiveBookingScreen(
                     )
                 )
 
-                Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
-
-                JJNPrimaryButton(
-                    text = "Back to Home",
-                    onClick = onNavigateBack,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                if (showCancelDialog) {
+                    CancellationReasonBottomSheet(
+                        title = "Cancel Ride",
+                        reasons = CustomerCancellationReasons,
+                        isLoading = uiState.isCancelling,
+                        onConfirm = { reason ->
+                            viewModel.onEvent(CustomerActiveBookingUiEvent.CancelBooking(booking.bookingId, reason))
+                            showCancelDialog = false
+                        },
+                        onDismiss = { showCancelDialog = false }
+                    )
+                }
             }
         }
     }

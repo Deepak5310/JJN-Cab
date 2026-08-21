@@ -7,6 +7,7 @@ enum class BookingStatus {
     DRIVER_ARRIVING,
     IN_PROGRESS,
     COMPLETED,
+    CANCELLED,
     CANCELLED_BY_CUSTOMER,
     CANCELLED_BY_DRIVER,
     NO_DRIVERS_AVAILABLE;
@@ -23,6 +24,7 @@ enum class BookingStatus {
     val isTerminal: Boolean
         get() = this in setOf(
             COMPLETED,
+            CANCELLED,
             CANCELLED_BY_CUSTOMER,
             CANCELLED_BY_DRIVER,
             NO_DRIVERS_AVAILABLE

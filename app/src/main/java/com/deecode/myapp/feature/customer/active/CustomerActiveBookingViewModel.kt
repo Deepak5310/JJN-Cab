@@ -111,6 +111,36 @@ class CustomerActiveBookingViewModel @Inject constructor(
         when (event) {
             is CustomerActiveBookingUiEvent.Retry -> observeActiveBooking()
             is CustomerActiveBookingUiEvent.ClearError -> _uiState.update { it.copy(errorMessage = null) }
+            is CustomerActiveBookingUiEvent.CancelBooking -> cancelBooking(event.bookingId, event.reason)
+            is CustomerActiveBookingUiEvent.ClearCancellationError -> _uiState.update { it.copy(cancellationError = null) }
+        }
+    }
+
+    private fun cancelBooking(bookingId: String, reason: String) {
+        if (_uiState.value.isCancelling) return
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isCancelling = true, cancellationError = null) }
+
+            when (val result = bookingRepository.cancelBooking(bookingId, reason)) {
+                is Resource.Success -> {
+                    _uiState.update {
+                        it.copy(
+                            isCancelling = false,
+                            cancellationError = null
+                        )
+                    }
+                }
+                is Resource.Error -> {
+                    _uiState.update {
+                        it.copy(
+                            isCancelling = false,
+                            cancellationError = result.message
+                        )
+                    }
+                }
+                is Resource.Loading -> Unit
+            }
         }
     }
 

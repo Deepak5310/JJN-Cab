@@ -276,4 +276,60 @@ class DefaultBookingRemoteDataSource @Inject constructor(
             Resource.Error(e.localizedMessage ?: "Failed to complete ride", e)
         }
     }
+
+    override suspend fun cancelBooking(
+        bookingId: String,
+        reason: String
+    ): Resource<Unit> {
+        val currentUid = auth.currentUser?.uid
+            ?: return Resource.Error("User must be authenticated to cancel a booking.")
+
+        return try {
+            val docRef = bookingsCollection.document(bookingId)
+            firestore.runTransaction { transaction ->
+                val snapshot = transaction.get(docRef)
+                if (!snapshot.exists()) {
+                    throw IllegalStateException("Booking not found.")
+                }
+
+                val customerId = snapshot.getString("customerId")
+                val driverId = snapshot.getString("driverId")
+                val currentStatus = snapshot.getString("status")
+
+                if (currentUid != customerId && currentUid != driverId) {
+                    throw IllegalStateException("Unauthorized: Only the assigned customer or driver can cancel this booking.")
+                }
+
+                if (currentStatus == "COMPLETED") {
+                    throw IllegalStateException("Cannot cancel a completed ride.")
+                }
+
+                if (currentStatus in setOf("CANCELLED", "CANCELLED_BY_CUSTOMER", "CANCELLED_BY_DRIVER", "NO_DRIVERS_AVAILABLE")) {
+                    throw IllegalStateException("This booking is already cancelled or closed.")
+                }
+
+                val newStatus = if (currentUid == customerId) "CANCELLED_BY_CUSTOMER" else "CANCELLED_BY_DRIVER"
+
+                val updates = mapOf(
+                    "status" to newStatus,
+                    "cancelledBy" to currentUid,
+                    "cancellationReason" to reason,
+                    "cancelledAt" to FieldValue.serverTimestamp(),
+                    "updatedAt" to FieldValue.serverTimestamp()
+                )
+
+                transaction.update(docRef, updates)
+            }.await()
+
+            try {
+                firestore.collection("driver_locations").document(bookingId).delete().await()
+            } catch (e: Exception) {
+                // Ignore cleanup error
+            }
+
+            Resource.Success(Unit)
+        } catch (e: Exception) {
+            Resource.Error(e.localizedMessage ?: "Failed to cancel booking", e)
+        }
+    }
 }

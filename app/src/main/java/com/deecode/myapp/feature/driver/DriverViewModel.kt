@@ -236,6 +236,7 @@ class DriverViewModel @Inject constructor(
             is DriverUiEvent.ClearActionMessage -> _uiState.update { it.copy(actionMessage = null) }
             is DriverUiEvent.UpdateRideStatus -> updateRideStatus(event.bookingId, event.newStatus)
             is DriverUiEvent.CompleteBooking -> completeBooking(event.bookingId)
+            is DriverUiEvent.CancelBooking -> cancelBooking(event.bookingId, event.reason)
             is DriverUiEvent.ClearRideStatusError -> _uiState.update { it.copy(rideStatusError = null) }
         }
     }
@@ -327,6 +328,39 @@ class DriverViewModel @Inject constructor(
                             activeDriverBooking = null,
                             activeCustomerName = null,
                             actionMessage = "Ride completed successfully!",
+                            selectedTab = DriverTab.DASHBOARD
+                        )
+                    }
+                }
+                is Resource.Error -> {
+                    _uiState.update {
+                        it.copy(
+                            isUpdatingRideStatus = false,
+                            rideStatusError = result.message
+                        )
+                    }
+                }
+                is Resource.Loading -> Unit
+            }
+        }
+    }
+
+    private fun cancelBooking(bookingId: String, reason: String) {
+        val state = _uiState.value
+        if (state.isUpdatingRideStatus) return
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isUpdatingRideStatus = true, rideStatusError = null) }
+
+            when (val result = bookingRepository.cancelBooking(bookingId, reason)) {
+                is Resource.Success -> {
+                    stopLocationTracking()
+                    _uiState.update {
+                        it.copy(
+                            isUpdatingRideStatus = false,
+                            activeDriverBooking = null,
+                            activeCustomerName = null,
+                            actionMessage = "Ride cancelled.",
                             selectedTab = DriverTab.DASHBOARD
                         )
                     }
