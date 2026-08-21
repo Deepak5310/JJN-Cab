@@ -3,14 +3,18 @@ package com.deecode.myapp.core.di
 import com.deecode.myapp.data.datasource.remote.AuthRemoteDataSource
 import com.deecode.myapp.data.datasource.remote.BookingRemoteDataSource
 import com.deecode.myapp.data.datasource.remote.DefaultBookingRemoteDataSource
+import com.deecode.myapp.data.datasource.remote.DefaultDriverRemoteDataSource
+import com.deecode.myapp.data.datasource.remote.DriverRemoteDataSource
 import com.deecode.myapp.data.datasource.remote.FirebaseAuthRemoteDataSourceImpl
 import com.deecode.myapp.data.datasource.remote.FirestoreUserRemoteDataSourceImpl
 import com.deecode.myapp.data.datasource.remote.UserRemoteDataSource
 import com.deecode.myapp.data.repository.AuthRepositoryImpl
 import com.deecode.myapp.data.repository.BookingRepositoryImpl
+import com.deecode.myapp.data.repository.DriverRepositoryImpl
 import com.deecode.myapp.data.repository.UserRepositoryImpl
 import com.deecode.myapp.domain.repository.AuthRepository
 import com.deecode.myapp.domain.repository.BookingRepository
+import com.deecode.myapp.domain.repository.DriverRepository
 import com.deecode.myapp.domain.repository.UserRepository
 import dagger.Binds
 import dagger.Module
@@ -33,6 +37,18 @@ abstract class RepositoryModule {
     abstract fun bindBookingRepository(
         bookingRepositoryImpl: BookingRepositoryImpl
     ): BookingRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindDriverRemoteDataSource(
+        defaultDriverRemoteDataSource: DefaultDriverRemoteDataSource
+    ): DriverRemoteDataSource
+
+    @Binds
+    @Singleton
+    abstract fun bindDriverRepository(
+        driverRepositoryImpl: DriverRepositoryImpl
+    ): DriverRepository
 
     @Binds
     @Singleton

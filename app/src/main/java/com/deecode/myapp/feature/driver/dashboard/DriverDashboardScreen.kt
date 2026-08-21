@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -34,7 +35,10 @@ import com.deecode.myapp.ui.theme.spacing
 fun DriverDashboardScreen(
     user: User?,
     isOnline: Boolean,
+    isUpdatingAvailability: Boolean,
+    availabilityError: String?,
     onToggleOnlineStatus: () -> Unit,
+    onClearAvailabilityError: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
@@ -50,36 +54,76 @@ fun DriverDashboardScreen(
                 vertical = MaterialTheme.spacing.medium
             )
     ) {
-        // Driver Greeting & Online Status
+        // Driver Greeting & Online Status Toggle
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "Welcome, Captain $driverName 🚖",
                     style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
                 )
-                Text(
-                    text = if (isOnline) "You are Online & receiving trips" else "You are currently Offline",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        color = if (isOnline) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (isOnline) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.outline
+                            )
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = if (isOnline) "ONLINE • Receiving trips" else "OFFLINE • Not available",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = if (isOnline) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                }
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (isUpdatingAvailability) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                Switch(
+                    checked = isOnline,
+                    onCheckedChange = { if (!isUpdatingAvailability) onToggleOnlineStatus() },
+                    enabled = !isUpdatingAvailability,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                        checkedTrackColor = MaterialTheme.colorScheme.primary
                     )
                 )
             }
-
-            Switch(
-                checked = isOnline,
-                onCheckedChange = { onToggleOnlineStatus() },
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                    checkedTrackColor = MaterialTheme.colorScheme.primary
-                )
-            )
         }
 
-        Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+
+        // Error Card
+        if (!availabilityError.isNullOrBlank()) {
+            JJNCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = MaterialTheme.spacing.medium),
+                containerColor = MaterialTheme.colorScheme.errorContainer,
+                contentColor = MaterialTheme.colorScheme.onErrorContainer
+            ) {
+                Text(
+                    text = availabilityError,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
 
         // Today's Earnings Banner
         JJNCard(
@@ -189,7 +233,7 @@ fun DriverDashboardScreen(
 
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
 
-        // Recent Trips Summary Placeholder
+        // Status Details Card
         JJNCard(
             modifier = Modifier.fillMaxWidth(),
             contentPadding = MaterialTheme.spacing.medium
@@ -202,19 +246,25 @@ fun DriverDashboardScreen(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                        .background(
+                            if (isOnline) MaterialTheme.colorScheme.primaryContainer
+                            else MaterialTheme.colorScheme.surfaceVariant
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = "📜", style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        text = if (isOnline) "🟢" else "⚪",
+                        style = MaterialTheme.typography.titleSmall
+                    )
                 }
                 Spacer(modifier = Modifier.width(MaterialTheme.spacing.medium))
                 Column {
                     Text(
-                        text = "Trip History Overview",
+                        text = if (isOnline) "Ready for Ride Matching" else "Currently Inactive",
                         style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
                     )
                     Text(
-                        text = "Your completed trips will be listed here",
+                        text = if (isOnline) "Customers nearby will be matched with you automatically" else "Toggle your status to Online to accept trips",
                         style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
                     )
                 }

@@ -178,7 +178,10 @@ fun DriverAppShell(
                     DriverDashboardScreen(
                         user = uiState.user,
                         isOnline = uiState.isOnline,
-                        onToggleOnlineStatus = { viewModel.onEvent(DriverUiEvent.ToggleOnlineStatus) }
+                        isUpdatingAvailability = uiState.isUpdatingAvailability,
+                        availabilityError = uiState.availabilityError,
+                        onToggleOnlineStatus = { viewModel.onEvent(DriverUiEvent.ToggleOnlineStatus) },
+                        onClearAvailabilityError = { viewModel.onEvent(DriverUiEvent.ClearAvailabilityError) }
                     )
                 }
                 DriverTab.REQUESTS -> {

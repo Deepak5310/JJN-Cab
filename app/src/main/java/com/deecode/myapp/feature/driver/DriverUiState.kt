@@ -17,7 +17,9 @@ data class DriverUiState(
     val isLoading: Boolean = true,
     val isUnauthorized: Boolean = false,
     val errorMessage: String? = null,
-    val isOnline: Boolean = true
+    val isOnline: Boolean = false,
+    val isUpdatingAvailability: Boolean = false,
+    val availabilityError: String? = null
 ) : UiState
 
 sealed interface DriverUiEvent : UiEvent {
@@ -25,4 +27,5 @@ sealed interface DriverUiEvent : UiEvent {
     data object ToggleOnlineStatus : DriverUiEvent
     data object Refresh : DriverUiEvent
     data object ClearError : DriverUiEvent
+    data object ClearAvailabilityError : DriverUiEvent
 }
