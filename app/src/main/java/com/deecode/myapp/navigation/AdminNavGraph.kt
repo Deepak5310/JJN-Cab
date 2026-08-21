@@ -3,7 +3,7 @@ package com.deecode.myapp.navigation
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
-import com.deecode.myapp.feature.admin.AdminPlaceholderScreen
+import com.deecode.myapp.feature.admin.AdminAppShell
 
 fun NavGraphBuilder.adminNavGraph(
     onLogout: () -> Unit
@@ -12,7 +12,7 @@ fun NavGraphBuilder.adminNavGraph(
         startDestination = Route.AdminDashboardRoute
     ) {
         composable<Route.AdminDashboardRoute> {
-            AdminPlaceholderScreen(onLogout = onLogout)
+            AdminAppShell(onLogout = onLogout)
         }
     }
 }

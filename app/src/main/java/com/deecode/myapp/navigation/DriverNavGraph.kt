@@ -3,7 +3,7 @@ package com.deecode.myapp.navigation
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
-import com.deecode.myapp.feature.driver.DriverPlaceholderScreen
+import com.deecode.myapp.feature.driver.DriverAppShell
 
 fun NavGraphBuilder.driverNavGraph(
     onLogout: () -> Unit
@@ -12,7 +12,7 @@ fun NavGraphBuilder.driverNavGraph(
         startDestination = Route.DriverHomeRoute
     ) {
         composable<Route.DriverHomeRoute> {
-            DriverPlaceholderScreen(onLogout = onLogout)
+            DriverAppShell(onLogout = onLogout)
         }
     }
 }

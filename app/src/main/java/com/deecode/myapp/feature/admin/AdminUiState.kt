@@ -1,18 +1,27 @@
 package com.deecode.myapp.feature.admin
 
-import com.deecode.myapp.core.base.UiEffect
 import com.deecode.myapp.core.base.UiEvent
 import com.deecode.myapp.core.base.UiState
+import com.deecode.myapp.domain.model.User
+
+enum class AdminTab {
+    DASHBOARD,
+    BOOKINGS,
+    DRIVERS,
+    USERS,
+    PROFILE
+}
 
 data class AdminUiState(
-    val isLoading: Boolean = false,
+    val user: User? = null,
+    val selectedTab: AdminTab = AdminTab.DASHBOARD,
+    val isLoading: Boolean = true,
+    val isUnauthorized: Boolean = false,
     val errorMessage: String? = null
 ) : UiState
 
 sealed interface AdminUiEvent : UiEvent {
-    data object RefreshMetrics : AdminUiEvent
-}
-
-sealed interface AdminUiEffect : UiEffect {
-    data class ShowToast(val message: String) : AdminUiEffect
+    data class SelectTab(val tab: AdminTab) : AdminUiEvent
+    data object Refresh : AdminUiEvent
+    data object ClearError : AdminUiEvent
 }
