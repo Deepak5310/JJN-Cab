@@ -35,19 +35,14 @@ jobs:
       - name: Configure Google Services
         env:
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
-        run: |
-          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
-            echo "$GOOGLE_SERVICES_JSON" > app/google-services.json
-          else
-            echo '{"project_info":{"project_number":"123456789012","project_id":"jjn-cab-app","storage_bucket":"jjn-cab-app.appspot.com"},"client":[{"client_info":{"mobilesdk_app_id":"1:123456789012:android:1234567890abcdef","android_client_info":{"package_name":"com.deecode.myapp"}},"oauth_client":[],"api_key":[{"current_key":"AIzaSyDummyKeyForGithubActionsCIBuild12345"}],"services":{"analytics_service":{"status":1}}}]}' > app/google-services.json
-          fi
+        run: echo "$GOOGLE_SERVICES_JSON" > app/google-services.json
 
       - name: Build Release APK
-        run: ./gradlew assembleRelease -Pandroid.injected.build.abi=arm64-v8a --no-daemon --parallel --build-cache
+        run: ./gradlew assembleRelease --no-daemon --parallel --build-cache
 
       - name: Upload Release APK
         uses: actions/upload-artifact@v7
         with:
-          name: jjn-cab-release-arm64
+          name: jjn-cab-release-apk
           path: app/build/outputs/apk/**/*.apk
           retention-days: 14
