@@ -48,6 +48,18 @@ class CustomerViewModel @Inject constructor(
     init {
         observeUserProfile()
         setupDebouncedSearch()
+        observeActiveBooking()
+    }
+
+    private fun observeActiveBooking() {
+        val authUser = authRepository.currentUser ?: return
+        viewModelScope.launch {
+            bookingRepository.observeActiveCustomerBooking(authUser.uid).collect { resource ->
+                if (resource is Resource.Success) {
+                    _uiState.update { it.copy(activeBooking = resource.data) }
+                }
+            }
+        }
     }
 
     private fun observeUserProfile() {

@@ -72,14 +72,14 @@ class DefaultBookingRemoteDataSource @Inject constructor(
     override fun observeCustomerBookings(customerId: String): Flow<List<BookingDto>> = callbackFlow {
         val listener = bookingsCollection
             .whereEqualTo("customerId", customerId)
-            .orderBy("createdAt", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     close(error)
                     return@addSnapshotListener
                 }
                 val dtos = snapshot?.toObjects(BookingDto::class.java) ?: emptyList()
-                trySend(dtos)
+                val sorted = dtos.sortedByDescending { it.createdAt?.toDate()?.time ?: 0L }
+                trySend(sorted)
             }
 
         awaitClose { listener.remove() }

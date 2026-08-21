@@ -23,6 +23,7 @@ import com.deecode.myapp.ui.components.JJNLoadingIndicator
 @Composable
 fun CustomerAppShell(
     onLogout: () -> Unit,
+    onNavigateToActiveBooking: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: CustomerViewModel = hiltViewModel()
 ) {
@@ -158,6 +159,7 @@ fun CustomerAppShell(
                         onSelectRideTier = { tier ->
                             viewModel.onEvent(CustomerUiEvent.SelectRideTier(tier))
                         },
+                        activeBooking = uiState.activeBooking,
                         onOpenConfirmBooking = {
                             viewModel.onEvent(CustomerUiEvent.OpenConfirmBooking)
                         },
@@ -170,6 +172,7 @@ fun CustomerAppShell(
                         onClearCreatedBooking = {
                             viewModel.onEvent(CustomerUiEvent.ClearCreatedBooking)
                         },
+                        onNavigateToActiveBooking = onNavigateToActiveBooking,
                         onNavigateToBookings = {
                             viewModel.onEvent(CustomerUiEvent.SelectTab(CustomerTab.BOOKINGS))
                         }

@@ -89,10 +89,12 @@ fun CustomerHomeScreen(
     onConfirmMapSelection: (Double, Double) -> Unit,
     onCancelMapSelection: () -> Unit,
     onSelectRideTier: (RideTier) -> Unit,
+    activeBooking: Booking?,
     onOpenConfirmBooking: () -> Unit,
     onCloseConfirmBooking: () -> Unit,
     onSubmitBooking: () -> Unit,
     onClearCreatedBooking: () -> Unit,
+    onNavigateToActiveBooking: () -> Unit,
     onNavigateToBookings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -518,6 +520,64 @@ fun CustomerHomeScreen(
                             .padding(8.dp),
                         style = MaterialTheme.typography.bodyMedium.copy(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                }
+            }
+        }
+
+        // Active Ride Banner
+        if (activeBooking != null) {
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+            JJNCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.medium)
+                    .clickable { onNavigateToActiveBooking() },
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                contentPadding = MaterialTheme.spacing.medium,
+                elevation = 2.dp
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(text = "🚕", style = MaterialTheme.typography.bodyMedium)
+                        }
+                        Spacer(modifier = Modifier.width(MaterialTheme.spacing.medium))
+                        Column {
+                            Text(
+                                text = "Active Ride: ${activeBooking.status.name}",
+                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                            )
+                            Text(
+                                text = "To: ${activeBooking.destination.address ?: "Destination"}",
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                ),
+                                maxLines = 1
+                            )
+                        }
+                    }
+
+                    Text(
+                        text = "View →",
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
                         )
                     )
                 }

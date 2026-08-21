@@ -55,7 +55,10 @@ data class CustomerUiState(
     val isConfirmBookingSheetVisible: Boolean = false,
     val isCreatingBooking: Boolean = false,
     val createdBooking: Booking? = null,
-    val bookingCreationError: String? = null
+    val bookingCreationError: String? = null,
+
+    // Realtime Active Booking
+    val activeBooking: Booking? = null
 ) : UiState {
     val selectedFare: FareBreakdown?
         get() = fareEstimates[selectedRideTier]

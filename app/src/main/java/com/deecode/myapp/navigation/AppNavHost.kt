@@ -37,6 +37,7 @@ fun AppNavHost(
         )
 
         customerNavGraph(
+            navController = navController,
             onLogout = {
                 navController.navigate(Route.AuthGraph) {
                     popUpTo(Route.CustomerGraph) { inclusive = true }
