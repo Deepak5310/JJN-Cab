@@ -66,5 +66,19 @@ service cloud.firestore {
       // Soft deletes / cancellations only
       allow delete: if false;
     }
+
+    // Driver live tracking collection
+    match /driver_locations/{bookingId} {
+      // Read: ONLY the assigned driver or assigned customer
+      allow read: if isAuthenticated() && (
+        resource.data.driverId == request.auth.uid ||
+        resource.data.customerId == request.auth.uid
+      );
+
+      // Write: ONLY the authenticated assigned driver
+      allow write: if isAuthenticated() && 
+        request.resource.data.driverId == request.auth.uid &&
+        (resource == null || resource.data.driverId == request.auth.uid);
+    }
   }
 }

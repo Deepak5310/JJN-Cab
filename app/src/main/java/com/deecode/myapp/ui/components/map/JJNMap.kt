@@ -44,6 +44,7 @@ fun JJNMap(
     currentLocation: LocationPoint? = null,
     pickupLocation: LocationPoint? = null,
     destinationLocation: LocationPoint? = null,
+    driverLocation: LocationPoint? = null,
     routePoints: List<LocationPoint> = emptyList(),
     hasLocationPermission: Boolean = false,
     isSelectingOnMap: Boolean = false,
@@ -81,17 +82,27 @@ fun JJNMap(
         routePoints.map { LatLng(it.latitude, it.longitude) }
     }
 
-    // Auto animate camera when route / pickup / destination locations change
-    LaunchedEffect(routePoints, pickupLocation, destinationLocation, currentLocation) {
+    // Auto animate camera when route / pickup / destination / driver locations change
+    LaunchedEffect(routePoints, pickupLocation, destinationLocation, currentLocation, driverLocation) {
         if (isSelectingOnMap) return@LaunchedEffect
 
         if (polylineLatLngs.isNotEmpty()) {
             val builder = LatLngBounds.builder()
             polylineLatLngs.forEach { builder.include(it) }
+            driverLocation?.let { builder.include(LatLng(it.latitude, it.longitude)) }
             val bounds = builder.build()
             cameraPositionState.animate(
                 CameraUpdateFactory.newLatLngBounds(bounds, 80),
                 durationMs = 900
+            )
+        } else if (driverLocation != null && pickupLocation != null) {
+            val bounds = LatLngBounds.builder()
+                .include(LatLng(driverLocation.latitude, driverLocation.longitude))
+                .include(LatLng(pickupLocation.latitude, pickupLocation.longitude))
+                .build()
+            cameraPositionState.animate(
+                CameraUpdateFactory.newLatLngBounds(bounds, 100),
+                durationMs = 800
             )
         } else if (pickupLocation != null && destinationLocation != null) {
             val bounds = LatLngBounds.builder()
@@ -163,6 +174,18 @@ fun JJNMap(
                     title = "Destination",
                     snippet = destinationLocation.address ?: "Selected Destination",
                     icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
+                )
+            }
+
+            // Driver Live Location Marker
+            if (driverLocation != null) {
+                Marker(
+                    state = MarkerState(
+                        position = LatLng(driverLocation.latitude, driverLocation.longitude)
+                    ),
+                    title = "Your Cab 🚖",
+                    snippet = "Driver Live Location",
+                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)
                 )
             }
 

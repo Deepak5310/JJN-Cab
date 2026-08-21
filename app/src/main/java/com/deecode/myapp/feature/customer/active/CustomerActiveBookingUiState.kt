@@ -3,6 +3,7 @@ package com.deecode.myapp.feature.customer.active
 import com.deecode.myapp.core.base.UiEvent
 import com.deecode.myapp.core.base.UiState
 import com.deecode.myapp.domain.model.Booking
+import com.deecode.myapp.domain.model.LocationPoint
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -11,12 +12,14 @@ import java.util.Locale
 data class CustomerActiveBookingUiState(
     val isLoading: Boolean = true,
     val booking: Booking? = null,
+    val driverLocation: LocationPoint? = null,
+    val hasLocationPermission: Boolean = false,
     val errorMessage: String? = null
 ) : UiState {
     val formattedFare: String
         get() {
             val fare = booking?.estimatedFare ?: 0.0
-            val format = NumberFormat.getCurrencyInstance(Locale("en", "IN"))
+            val format = NumberFormat.getCurrencyInstance(Locale.Builder().setLanguage("en").setRegion("IN").build())
             format.maximumFractionDigits = 0
             return format.format(fare)
         }

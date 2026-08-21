@@ -1,7 +1,6 @@
 package com.deecode.myapp.feature.customer.active
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,7 +18,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -41,6 +39,7 @@ import com.deecode.myapp.ui.components.JJNLoadingIndicator
 import com.deecode.myapp.ui.components.JJNOutlinedButton
 import com.deecode.myapp.ui.components.JJNOutlinedCard
 import com.deecode.myapp.ui.components.JJNPrimaryButton
+import com.deecode.myapp.ui.components.map.JJNMap
 import com.deecode.myapp.ui.theme.spacing
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -203,9 +202,27 @@ fun CustomerActiveBookingScreen(
                     )
                 )
 
-                Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
+                Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
 
-                // Real-time Status Card
+                // 2. Live Map Card with Pickup, Destination, and Driver Live Location
+                JJNOutlinedCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    contentPadding = 0.dp
+                ) {
+                    JJNMap(
+                        modifier = Modifier.fillMaxSize(),
+                        pickupLocation = booking.pickup,
+                        destinationLocation = booking.destination,
+                        driverLocation = uiState.driverLocation,
+                        hasLocationPermission = uiState.hasLocationPermission
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+
+                // 3. Real-time Status Card
                 JJNCard(
                     modifier = Modifier.fillMaxWidth(),
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -227,7 +244,14 @@ fun CustomerActiveBookingScreen(
                                 text = "Status: ${booking.status.name}",
                                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
                             )
-                            if (uiState.formattedCreatedAt.isNotBlank()) {
+                            if (uiState.driverLocation != null) {
+                                Text(
+                                    text = "🟢 Live driver location active",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.9f)
+                                    )
+                                )
+                            } else if (uiState.formattedCreatedAt.isNotBlank()) {
                                 Text(
                                     text = "Requested at: ${uiState.formattedCreatedAt}",
                                     style = MaterialTheme.typography.labelSmall.copy(
@@ -241,7 +265,7 @@ fun CustomerActiveBookingScreen(
 
                 Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
 
-                // Trip Details Card
+                // 4. Trip Details Card
                 JJNOutlinedCard(
                     modifier = Modifier.fillMaxWidth(),
                     contentPadding = MaterialTheme.spacing.medium

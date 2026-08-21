@@ -4,10 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.deecode.myapp.core.model.UserRole
 import com.deecode.myapp.core.result.Resource
+import com.deecode.myapp.domain.model.Booking
 import com.deecode.myapp.domain.model.BookingStatus
 import com.deecode.myapp.domain.repository.AuthRepository
 import com.deecode.myapp.domain.repository.BookingRepository
 import com.deecode.myapp.domain.repository.DriverRepository
+import com.deecode.myapp.domain.repository.DriverTrackingRepository
+import com.deecode.myapp.domain.repository.LocationRepository
 import com.deecode.myapp.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -23,7 +26,9 @@ class DriverViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val userRepository: UserRepository,
     private val driverRepository: DriverRepository,
-    private val bookingRepository: BookingRepository
+    private val bookingRepository: BookingRepository,
+    private val locationRepository: LocationRepository,
+    private val driverTrackingRepository: DriverTrackingRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DriverUiState())
@@ -31,6 +36,7 @@ class DriverViewModel @Inject constructor(
 
     private var pendingRequestsJob: Job? = null
     private var customerProfileJob: Job? = null
+    private var locationTrackingJob: Job? = null
 
     init {
         observeUserProfile()
@@ -117,13 +123,46 @@ class DriverViewModel @Inject constructor(
                     _uiState.update { it.copy(activeDriverBooking = booking) }
                     if (booking != null) {
                         fetchCustomerName(booking.customerId)
+                        syncLocationTracking(booking, driverId)
                     } else {
                         customerProfileJob?.cancel()
+                        stopLocationTracking()
                         _uiState.update { it.copy(activeCustomerName = null) }
                     }
                 }
             }
         }
+    }
+
+    private fun syncLocationTracking(booking: Booking, driverId: String) {
+        val isTrackingActive = booking.status == BookingStatus.DRIVER_ARRIVING ||
+                booking.status == BookingStatus.IN_PROGRESS
+
+        if (isTrackingActive) {
+            if (locationTrackingJob == null || locationTrackingJob?.isActive == false) {
+                locationTrackingJob = viewModelScope.launch {
+                    try {
+                        locationRepository.observeLocationUpdates().collect { point ->
+                            driverTrackingRepository.pushDriverLocation(
+                                bookingId = booking.bookingId,
+                                driverId = driverId,
+                                customerId = booking.customerId,
+                                location = point
+                            )
+                        }
+                    } catch (e: Exception) {
+                        // Location permission denied or GPS disabled handled gracefully
+                    }
+                }
+            }
+        } else {
+            stopLocationTracking()
+        }
+    }
+
+    private fun stopLocationTracking() {
+        locationTrackingJob?.cancel()
+        locationTrackingJob = null
     }
 
     private fun fetchCustomerName(customerId: String) {
@@ -306,8 +345,14 @@ class DriverViewModel @Inject constructor(
 
     fun signOut(onComplete: () -> Unit) {
         viewModelScope.launch {
+            stopLocationTracking()
             authRepository.signOut()
             onComplete()
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        stopLocationTracking()
     }
 }

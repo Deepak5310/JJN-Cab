@@ -21,4 +21,8 @@ class LocationRepositoryImpl @Inject constructor(
         withContext(dispatchers.io) {
             locationDataSource.getCurrentLocation()
         }
+
+    override fun observeLocationUpdates(): kotlinx.coroutines.flow.Flow<LocationPoint> {
+        return locationDataSource.observeLocationUpdates()
+    }
 }
