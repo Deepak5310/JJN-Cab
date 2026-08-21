@@ -253,8 +253,6 @@ fun DriverAppShell(
                 }
                 DriverTab.PROFILE -> {
                     DriverProfileScreen(
-                        user = uiState.user,
-                        vehicle = uiState.vehicle,
                         onManageVehicle = { viewModel.onEvent(DriverUiEvent.OpenVehicleScreen) },
                         onLogout = { viewModel.signOut(onLogout) }
                     )
