@@ -180,6 +180,7 @@ fun CustomerActiveBookingScreen(
                         BookingStatus.ACCEPTED -> "Driver Confirmed"
                         BookingStatus.DRIVER_ARRIVING -> "Driver Arriving"
                         BookingStatus.IN_PROGRESS -> "Trip in Progress"
+                        BookingStatus.COMPLETED -> "Ride Completed 🏁"
                         else -> "Ride Status: ${booking.status.name}"
                     },
                     style = MaterialTheme.typography.headlineSmall.copy(
@@ -195,6 +196,7 @@ fun CustomerActiveBookingScreen(
                         BookingStatus.ACCEPTED -> "A driver has accepted your ride request."
                         BookingStatus.DRIVER_ARRIVING -> "Driver is heading towards your pickup point."
                         BookingStatus.IN_PROGRESS -> "You are on your way to destination."
+                        BookingStatus.COMPLETED -> "You have reached your destination. Thank you for riding with JJN Cab!"
                         else -> "Current status: ${booking.status.name}"
                     },
                     style = MaterialTheme.typography.bodyMedium.copy(

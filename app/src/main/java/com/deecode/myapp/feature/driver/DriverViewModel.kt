@@ -235,6 +235,7 @@ class DriverViewModel @Inject constructor(
             is DriverUiEvent.RejectBooking -> rejectBooking(event.bookingId)
             is DriverUiEvent.ClearActionMessage -> _uiState.update { it.copy(actionMessage = null) }
             is DriverUiEvent.UpdateRideStatus -> updateRideStatus(event.bookingId, event.newStatus)
+            is DriverUiEvent.CompleteBooking -> completeBooking(event.bookingId)
             is DriverUiEvent.ClearRideStatusError -> _uiState.update { it.copy(rideStatusError = null) }
         }
     }
@@ -293,6 +294,40 @@ class DriverViewModel @Inject constructor(
                         it.copy(
                             isUpdatingRideStatus = false,
                             rideStatusError = null
+                        )
+                    }
+                }
+                is Resource.Error -> {
+                    _uiState.update {
+                        it.copy(
+                            isUpdatingRideStatus = false,
+                            rideStatusError = result.message
+                        )
+                    }
+                }
+                is Resource.Loading -> Unit
+            }
+        }
+    }
+
+    private fun completeBooking(bookingId: String) {
+        val state = _uiState.value
+        val user = state.user ?: return
+        if (state.isUpdatingRideStatus) return
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isUpdatingRideStatus = true, rideStatusError = null) }
+
+            when (val result = bookingRepository.completeBooking(bookingId, user.uid)) {
+                is Resource.Success -> {
+                    stopLocationTracking()
+                    _uiState.update {
+                        it.copy(
+                            isUpdatingRideStatus = false,
+                            activeDriverBooking = null,
+                            activeCustomerName = null,
+                            actionMessage = "Ride completed successfully!",
+                            selectedTab = DriverTab.DASHBOARD
                         )
                     }
                 }

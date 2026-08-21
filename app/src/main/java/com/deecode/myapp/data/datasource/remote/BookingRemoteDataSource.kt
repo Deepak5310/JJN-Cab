@@ -13,4 +13,11 @@ interface BookingRemoteDataSource {
     suspend fun acceptBooking(bookingId: String, driverId: String): Resource<Unit>
     fun observeDriverBookings(driverId: String): Flow<List<BookingDto>>
     suspend fun updateBookingStatus(bookingId: String, driverId: String, newStatus: String): Resource<Unit>
+    suspend fun completeBooking(
+        bookingId: String,
+        driverId: String,
+        finalFare: Double? = null,
+        finalDistanceMeters: Int? = null,
+        finalDurationSeconds: Long? = null
+    ): Resource<Unit>
 }

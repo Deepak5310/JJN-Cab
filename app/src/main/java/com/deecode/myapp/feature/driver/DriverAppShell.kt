@@ -210,6 +210,11 @@ fun DriverAppShell(
                                 viewModel.onEvent(DriverUiEvent.UpdateRideStatus(booking.bookingId, newStatus))
                             }
                         },
+                        onCompleteRide = {
+                            uiState.activeDriverBooking?.let { booking ->
+                                viewModel.onEvent(DriverUiEvent.CompleteBooking(booking.bookingId))
+                            }
+                        },
                         onClearError = { viewModel.onEvent(DriverUiEvent.ClearRideStatusError) }
                     )
                 }

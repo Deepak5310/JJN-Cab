@@ -174,4 +174,47 @@ class BookingMappingTest {
         assertFalse(isValidTransition("ACCEPTED", "IN_PROGRESS"))
         assertFalse(isValidTransition("IN_PROGRESS", "ACCEPTED"))
     }
+
+    @Test
+    fun `completed booking correctly maps finalFare, finalDistance, and finalDuration`() {
+        val completedTimestamp = Timestamp(Date(1700005000000L))
+        val dto = BookingDto(
+            bookingId = "booking_comp_1",
+            customerId = "user_100",
+            status = "COMPLETED",
+            driverId = "driver_200",
+            estimatedFare = 250.0,
+            distanceMeters = 12000,
+            estimatedDurationSeconds = 1500L,
+            completedAt = completedTimestamp,
+            finalFare = 265.0,
+            finalDistanceMeters = 12400,
+            finalDurationSeconds = 1620L
+        )
+
+        val domain = dto.toDomain()
+
+        assertEquals("booking_comp_1", domain.bookingId)
+        assertEquals(BookingStatus.COMPLETED, domain.status)
+        assertFalse(domain.status.isActive)
+        assertTrue(domain.status.isTerminal)
+        assertEquals(1700005000000L, domain.completedAt)
+        assertEquals(265.0, domain.finalFare ?: 0.0, 0.01)
+        assertEquals(12400, domain.finalDistanceMeters)
+        assertEquals(1620L, domain.finalDurationSeconds)
+    }
+
+    @Test
+    fun `completion transition requires IN_PROGRESS or STARTED status`() {
+        fun canCompleteRide(status: String): Boolean =
+            status == "IN_PROGRESS" || status == "STARTED"
+
+        assertTrue(canCompleteRide("IN_PROGRESS"))
+        assertTrue(canCompleteRide("STARTED"))
+
+        assertFalse(canCompleteRide("REQUESTED"))
+        assertFalse(canCompleteRide("ACCEPTED"))
+        assertFalse(canCompleteRide("DRIVER_ARRIVING"))
+        assertFalse(canCompleteRide("COMPLETED"))
+    }
 }

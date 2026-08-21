@@ -41,11 +41,12 @@ fun DriverActiveRideScreen(
     isUpdatingStatus: Boolean,
     rideStatusError: String?,
     onUpdateStatus: (BookingStatus) -> Unit,
+    onCompleteRide: () -> Unit,
     onClearError: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
-    val currencyFormat = NumberFormat.getCurrencyInstance(Locale("en", "IN")).apply {
+    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.Builder().setLanguage("en").setRegion("IN").build()).apply {
         maximumFractionDigits = 0
     }
 
@@ -344,23 +345,36 @@ fun DriverActiveRideScreen(
                     )
                 }
                 BookingStatus.IN_PROGRESS -> {
-                    JJNCard(
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        contentPadding = MaterialTheme.spacing.medium
+                        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
+                        JJNCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            contentPadding = MaterialTheme.spacing.medium
                         ) {
-                            Text(text = "🏎️", style = MaterialTheme.typography.titleMedium)
-                            Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
-                            Text(
-                                text = "Trip in Progress • En route to destination",
-                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(text = "🏎️", style = MaterialTheme.typography.titleMedium)
+                                Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
+                                Text(
+                                    text = "Trip in Progress • En route to destination",
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+                                )
+                            }
                         }
+
+                        JJNPrimaryButton(
+                            text = if (isUpdatingStatus) "Completing Ride..." else "🏁 Complete Ride",
+                            onClick = onCompleteRide,
+                            enabled = !isUpdatingStatus,
+                            isLoading = isUpdatingStatus,
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
                 }
                 else -> Unit

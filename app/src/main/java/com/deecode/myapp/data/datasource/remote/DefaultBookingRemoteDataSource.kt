@@ -215,4 +215,65 @@ class DefaultBookingRemoteDataSource @Inject constructor(
             Resource.Error(e.localizedMessage ?: "Failed to update ride status", e)
         }
     }
+
+    override suspend fun completeBooking(
+        bookingId: String,
+        driverId: String,
+        finalFare: Double?,
+        finalDistanceMeters: Int?,
+        finalDurationSeconds: Long?
+    ): Resource<Unit> {
+        val currentUid = auth.currentUser?.uid
+            ?: return Resource.Error("Driver must be authenticated.")
+
+        if (currentUid != driverId) {
+            return Resource.Error("Unauthorized driver operation.")
+        }
+
+        return try {
+            val docRef = bookingsCollection.document(bookingId)
+            firestore.runTransaction { transaction ->
+                val snapshot = transaction.get(docRef)
+                if (!snapshot.exists()) {
+                    throw IllegalStateException("Booking not found.")
+                }
+
+                val currentDriver = snapshot.getString("driverId")
+                val currentStatus = snapshot.getString("status")
+
+                if (currentDriver != driverId) {
+                    throw IllegalStateException("You are not the assigned driver for this ride.")
+                }
+
+                if (currentStatus != "IN_PROGRESS" && currentStatus != "STARTED") {
+                    throw IllegalStateException("Ride can only be completed when STARTED/IN_PROGRESS. Current status: $currentStatus")
+                }
+
+                val estimatedFare = snapshot.getDouble("estimatedFare") ?: 0.0
+                val estimatedDistance = snapshot.getLong("distanceMeters")?.toInt() ?: 0
+                val estimatedDuration = snapshot.getLong("estimatedDurationSeconds") ?: 0L
+
+                val updates = mutableMapOf<String, Any>(
+                    "status" to "COMPLETED",
+                    "completedAt" to FieldValue.serverTimestamp(),
+                    "updatedAt" to FieldValue.serverTimestamp(),
+                    "finalFare" to (finalFare ?: estimatedFare),
+                    "finalDistanceMeters" to (finalDistanceMeters ?: estimatedDistance),
+                    "finalDurationSeconds" to (finalDurationSeconds ?: estimatedDuration)
+                )
+
+                transaction.update(docRef, updates)
+            }.await()
+
+            try {
+                firestore.collection("driver_locations").document(bookingId).delete().await()
+            } catch (e: Exception) {
+                // Ignore cleanup error
+            }
+
+            Resource.Success(Unit)
+        } catch (e: Exception) {
+            Resource.Error(e.localizedMessage ?: "Failed to complete ride", e)
+        }
+    }
 }

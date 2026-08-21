@@ -46,15 +46,18 @@ service cloud.firestore {
 
       // Update: Customer can update (e.g. cancel) or driver can accept / update progress
       allow update: if isAuthenticated() && (
-        // Customer cancelling/updating their own booking
+        // Customer cancelling/updating their own booking (cannot set COMPLETED or change driver)
         (resource.data.customerId == request.auth.uid && 
-         request.resource.data.customerId == resource.data.customerId) ||
+         request.resource.data.customerId == resource.data.customerId &&
+         request.resource.data.driverId == resource.data.driverId &&
+         request.resource.data.status != 'COMPLETED') ||
         // Assigned driver updating trip state with valid forward transitions
         (resource.data.driverId == request.auth.uid &&
          request.resource.data.driverId == resource.data.driverId &&
          request.resource.data.customerId == resource.data.customerId &&
          ((resource.data.status in ['ACCEPTED', 'ASSIGNED'] && request.resource.data.status in ['DRIVER_ARRIVING', 'ARRIVING']) ||
-          (resource.data.status in ['DRIVER_ARRIVING', 'ARRIVING'] && request.resource.data.status in ['IN_PROGRESS', 'STARTED']))) ||
+          (resource.data.status in ['DRIVER_ARRIVING', 'ARRIVING'] && request.resource.data.status in ['IN_PROGRESS', 'STARTED']) ||
+          (resource.data.status in ['IN_PROGRESS', 'STARTED'] && request.resource.data.status == 'COMPLETED'))) ||
         // Unassigned driver claiming the booking
         (resource.data.driverId == null && 
          resource.data.status in ['REQUESTED', 'SEARCHING_DRIVER'] &&

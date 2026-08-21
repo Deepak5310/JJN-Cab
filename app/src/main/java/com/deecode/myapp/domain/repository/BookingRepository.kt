@@ -15,4 +15,11 @@ interface BookingRepository {
     suspend fun acceptBooking(bookingId: String, driverId: String): Resource<Unit>
     fun observeActiveDriverBooking(driverId: String): Flow<Resource<Booking?>>
     suspend fun updateBookingStatus(bookingId: String, driverId: String, newStatus: BookingStatus): Resource<Unit>
+    suspend fun completeBooking(
+        bookingId: String,
+        driverId: String,
+        finalFare: Double? = null,
+        finalDistanceMeters: Int? = null,
+        finalDurationSeconds: Long? = null
+    ): Resource<Unit>
 }

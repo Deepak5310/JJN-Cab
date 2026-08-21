@@ -103,4 +103,20 @@ class BookingRepositoryImpl @Inject constructor(
     ): Resource<Unit> = withContext(dispatchers.io) {
         remoteDataSource.updateBookingStatus(bookingId, driverId, newStatus.name)
     }
+
+    override suspend fun completeBooking(
+        bookingId: String,
+        driverId: String,
+        finalFare: Double?,
+        finalDistanceMeters: Int?,
+        finalDurationSeconds: Long?
+    ): Resource<Unit> = withContext(dispatchers.io) {
+        remoteDataSource.completeBooking(
+            bookingId = bookingId,
+            driverId = driverId,
+            finalFare = finalFare,
+            finalDistanceMeters = finalDistanceMeters,
+            finalDurationSeconds = finalDurationSeconds
+        )
+    }
 }

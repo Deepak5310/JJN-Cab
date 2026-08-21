@@ -41,7 +41,12 @@ data class BookingDto(
     @ServerTimestamp
     val createdAt: Timestamp? = null,
     @ServerTimestamp
-    val updatedAt: Timestamp? = null
+    val updatedAt: Timestamp? = null,
+    @ServerTimestamp
+    val completedAt: Timestamp? = null,
+    val finalFare: Double? = null,
+    val finalDistanceMeters: Int? = null,
+    val finalDurationSeconds: Long? = null
 ) {
     fun toDomain(): Booking = Booking(
         bookingId = bookingId,
@@ -63,7 +68,11 @@ data class BookingDto(
         },
         driverId = driverId,
         createdAt = createdAt?.toDate()?.time ?: System.currentTimeMillis(),
-        updatedAt = updatedAt?.toDate()?.time ?: System.currentTimeMillis()
+        updatedAt = updatedAt?.toDate()?.time ?: System.currentTimeMillis(),
+        completedAt = completedAt?.toDate()?.time,
+        finalFare = finalFare,
+        finalDistanceMeters = finalDistanceMeters,
+        finalDurationSeconds = finalDurationSeconds
     )
 
     companion object {
@@ -76,7 +85,10 @@ data class BookingDto(
             estimatedDurationSeconds = booking.estimatedDurationSeconds,
             estimatedFare = booking.estimatedFare,
             status = booking.status.name,
-            driverId = booking.driverId
+            driverId = booking.driverId,
+            finalFare = booking.finalFare,
+            finalDistanceMeters = booking.finalDistanceMeters,
+            finalDurationSeconds = booking.finalDurationSeconds
         )
     }
 }

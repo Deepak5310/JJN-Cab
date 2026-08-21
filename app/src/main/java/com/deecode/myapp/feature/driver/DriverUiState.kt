@@ -45,5 +45,6 @@ sealed interface DriverUiEvent : UiEvent {
     data class RejectBooking(val bookingId: String) : DriverUiEvent
     data object ClearActionMessage : DriverUiEvent
     data class UpdateRideStatus(val bookingId: String, val newStatus: BookingStatus) : DriverUiEvent
+    data class CompleteBooking(val bookingId: String) : DriverUiEvent
     data object ClearRideStatusError : DriverUiEvent
 }
