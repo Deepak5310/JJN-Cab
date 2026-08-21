@@ -24,6 +24,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,8 +35,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
+import com.deecode.myapp.domain.model.FareBreakdown
 import com.deecode.myapp.domain.model.LocationPoint
 import com.deecode.myapp.domain.model.PlaceSuggestion
+import com.deecode.myapp.domain.model.RideTier
 import com.deecode.myapp.domain.model.RouteInfo
 import com.deecode.myapp.domain.model.User
 import com.deecode.myapp.feature.customer.LocationTarget
@@ -56,6 +59,8 @@ fun CustomerHomeScreen(
     routeInfo: RouteInfo?,
     isCalculatingRoute: Boolean,
     routeError: String?,
+    selectedRideTier: RideTier,
+    fareEstimates: Map<RideTier, FareBreakdown>,
     hasLocationPermission: Boolean,
     isLocating: Boolean,
     locationError: String?,
@@ -78,6 +83,7 @@ fun CustomerHomeScreen(
     onStartMapSelection: (LocationTarget) -> Unit,
     onConfirmMapSelection: (Double, Double) -> Unit,
     onCancelMapSelection: () -> Unit,
+    onSelectRideTier: (RideTier) -> Unit,
     onNavigateToBookings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -500,36 +506,6 @@ fun CustomerHomeScreen(
 
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
 
-        // Active Ride Banner (Placeholder)
-        JJNOutlinedCard(
-            modifier = Modifier.fillMaxWidth(),
-            contentPadding = MaterialTheme.spacing.medium
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = "Active Ride",
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    )
-                    Text(
-                        text = "No active rides at the moment",
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
-
         // Ride Options Header
         Text(
             text = "Ride Options",
@@ -541,37 +517,120 @@ fun CustomerHomeScreen(
 
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
 
-        // Ride Categories Preview Grid
+        // Ride Categories Grid with Live Fare Estimation
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
         ) {
-            RideCategoryCard(
-                title = "JJN Mini",
-                subtitle = "Affordable",
-                modifier = Modifier.weight(1f),
-                isSelected = true
-            )
-            RideCategoryCard(
-                title = "JJN Prime",
-                subtitle = "Comfort Sedan",
-                modifier = Modifier.weight(1f),
-                isSelected = false
-            )
-            RideCategoryCard(
-                title = "JJN SUV",
-                subtitle = "Spacious",
-                modifier = Modifier.weight(1f),
-                isSelected = false
-            )
+            RideTier.entries.forEach { tier ->
+                RideCategoryCard(
+                    tier = tier,
+                    fare = fareEstimates[tier],
+                    isSelected = selectedRideTier == tier,
+                    onClick = { onSelectRideTier(tier) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+
+        // Fare Breakdown Card (when route is computed)
+        val selectedFare = fareEstimates[selectedRideTier]
+        if (selectedFare != null) {
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+            JJNOutlinedCard(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = MaterialTheme.spacing.medium
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Fare Breakdown (${selectedRideTier.displayName})",
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        )
+                        Text(
+                            text = selectedFare.formattedTotalFare,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        )
+                    }
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = MaterialTheme.spacing.small),
+                        color = MaterialTheme.colorScheme.outlineVariant
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Base Fare",
+                            style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        )
+                        Text(
+                            text = selectedFare.formattedBaseFare,
+                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Distance (${String.format("%.1f", selectedFare.distanceKm)} km)",
+                            style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        )
+                        Text(
+                            text = selectedFare.formattedDistanceCharge,
+                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Time (${selectedFare.durationMinutes} min)",
+                            style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        )
+                        Text(
+                            text = selectedFare.formattedTimeCharge,
+                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium)
+                        )
+                    }
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
 
         // Primary Call to Action
         val canRequestRide = pickupLocation != null && destinationLocation != null && routeInfo != null
+        val ctaText = if (selectedFare != null) {
+            "Request ${selectedRideTier.displayName} • ${selectedFare.formattedTotalFare}"
+        } else if (canRequestRide) {
+            "Request ${selectedRideTier.displayName}"
+        } else {
+            "Select Pickup & Destination"
+        }
+
         JJNPrimaryButton(
-            text = if (canRequestRide) "Ready to Request Ride" else "Select Pickup & Destination",
+            text = ctaText,
             onClick = { /* Ready for future booking flow */ },
             enabled = canRequestRide
         )
@@ -594,34 +653,39 @@ fun CustomerHomeScreen(
 
 @Composable
 private fun RideCategoryCard(
-    title: String,
-    subtitle: String,
-    modifier: Modifier = Modifier,
-    isSelected: Boolean = false
+    tier: RideTier,
+    fare: FareBreakdown?,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     JJNCard(
-        modifier = modifier,
+        modifier = modifier
+            .clip(MaterialTheme.shapes.medium)
+            .clickable(onClick = onClick),
         containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
         contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
-        contentPadding = MaterialTheme.spacing.small
+        contentPadding = MaterialTheme.spacing.small,
+        elevation = if (isSelected) 3.dp else 1.dp
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = "🚕",
+                text = tier.icon,
                 style = MaterialTheme.typography.headlineSmall
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = title,
+                text = tier.displayName,
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
             )
             Text(
-                text = subtitle,
+                text = fare?.formattedTotalFare ?: "Est. fare",
                 style = MaterialTheme.typography.labelSmall.copy(
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    fontWeight = if (fare != null) FontWeight.Bold else FontWeight.Normal,
+                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             )
         }

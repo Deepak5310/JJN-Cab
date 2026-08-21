@@ -105,6 +105,8 @@ fun CustomerAppShell(
                         routeInfo = uiState.routeInfo,
                         isCalculatingRoute = uiState.isCalculatingRoute,
                         routeError = uiState.routeError,
+                        selectedRideTier = uiState.selectedRideTier,
+                        fareEstimates = uiState.fareEstimates,
                         hasLocationPermission = viewModel.hasLocationPermission(),
                         isLocating = uiState.isLocating,
                         locationError = uiState.locationError,
@@ -148,6 +150,9 @@ fun CustomerAppShell(
                         },
                         onCancelMapSelection = {
                             viewModel.onEvent(CustomerUiEvent.CancelMapSelection)
+                        },
+                        onSelectRideTier = { tier ->
+                            viewModel.onEvent(CustomerUiEvent.SelectRideTier(tier))
                         },
                         onNavigateToBookings = {
                             viewModel.onEvent(CustomerUiEvent.SelectTab(CustomerTab.BOOKINGS))

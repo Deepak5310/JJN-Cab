@@ -2,8 +2,10 @@ package com.deecode.myapp.feature.customer
 
 import com.deecode.myapp.core.base.UiEvent
 import com.deecode.myapp.core.base.UiState
+import com.deecode.myapp.domain.model.FareBreakdown
 import com.deecode.myapp.domain.model.LocationPoint
 import com.deecode.myapp.domain.model.PlaceSuggestion
+import com.deecode.myapp.domain.model.RideTier
 import com.deecode.myapp.domain.model.RouteInfo
 import com.deecode.myapp.domain.model.User
 
@@ -42,8 +44,15 @@ data class CustomerUiState(
     // Route Calculation
     val routeInfo: RouteInfo? = null,
     val isCalculatingRoute: Boolean = false,
-    val routeError: String? = null
-) : UiState
+    val routeError: String? = null,
+
+    // Fare Estimation
+    val selectedRideTier: RideTier = RideTier.MINI,
+    val fareEstimates: Map<RideTier, FareBreakdown> = emptyMap()
+) : UiState {
+    val selectedFare: FareBreakdown?
+        get() = fareEstimates[selectedRideTier]
+}
 
 sealed interface CustomerUiEvent : UiEvent {
     data class SelectTab(val tab: CustomerTab) : CustomerUiEvent
@@ -66,4 +75,7 @@ sealed interface CustomerUiEvent : UiEvent {
     // Route Calculation
     data object CalculateRoute : CustomerUiEvent
     data object ClearRoute : CustomerUiEvent
+
+    // Fare Selection
+    data class SelectRideTier(val tier: RideTier) : CustomerUiEvent
 }

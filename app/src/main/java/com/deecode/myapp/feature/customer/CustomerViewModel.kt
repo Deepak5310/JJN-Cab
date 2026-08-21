@@ -3,6 +3,7 @@ package com.deecode.myapp.feature.customer
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.deecode.myapp.core.result.Resource
+import com.deecode.myapp.domain.calculator.FareCalculator
 import com.deecode.myapp.domain.model.LocationPoint
 import com.deecode.myapp.domain.model.PlaceSuggestion
 import com.deecode.myapp.domain.repository.AuthRepository
@@ -30,7 +31,8 @@ class CustomerViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val locationRepository: LocationRepository,
     private val placesRepository: PlacesRepository,
-    private val routeRepository: RouteRepository
+    private val routeRepository: RouteRepository,
+    private val fareCalculator: FareCalculator
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CustomerUiState(isLoading = true))
@@ -182,8 +184,22 @@ class CustomerViewModel @Inject constructor(
             }
             is CustomerUiEvent.ClearSelectedLocation -> {
                 when (event.target) {
-                    LocationTarget.PICKUP -> _uiState.update { it.copy(pickupLocation = null, routeInfo = null, routeError = null) }
-                    LocationTarget.DESTINATION -> _uiState.update { it.copy(destinationLocation = null, routeInfo = null, routeError = null) }
+                    LocationTarget.PICKUP -> _uiState.update {
+                        it.copy(
+                            pickupLocation = null,
+                            routeInfo = null,
+                            routeError = null,
+                            fareEstimates = emptyMap()
+                        )
+                    }
+                    LocationTarget.DESTINATION -> _uiState.update {
+                        it.copy(
+                            destinationLocation = null,
+                            routeInfo = null,
+                            routeError = null,
+                            fareEstimates = emptyMap()
+                        )
+                    }
                 }
                 lastCalculatedPair = null
             }
@@ -206,8 +222,17 @@ class CustomerViewModel @Inject constructor(
                 checkAndCalculateRoute()
             }
             is CustomerUiEvent.ClearRoute -> {
-                _uiState.update { it.copy(routeInfo = null, routeError = null) }
+                _uiState.update {
+                    it.copy(
+                        routeInfo = null,
+                        routeError = null,
+                        fareEstimates = emptyMap()
+                    )
+                }
                 lastCalculatedPair = null
+            }
+            is CustomerUiEvent.SelectRideTier -> {
+                _uiState.update { it.copy(selectedRideTier = event.tier) }
             }
         }
     }
@@ -299,9 +324,16 @@ class CustomerViewModel @Inject constructor(
 
             when (val result = routeRepository.calculateRoute(origin, destination)) {
                 is Resource.Success -> {
+                    val route = result.data
+                    val fares = fareCalculator.calculateAllTiers(
+                        distanceMeters = route.distanceMeters,
+                        durationSeconds = route.durationSeconds
+                    )
+
                     _uiState.update {
                         it.copy(
-                            routeInfo = result.data,
+                            routeInfo = route,
+                            fareEstimates = fares,
                             isCalculatingRoute = false,
                             routeError = null
                         )
@@ -311,6 +343,7 @@ class CustomerViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             routeInfo = null,
+                            fareEstimates = emptyMap(),
                             isCalculatingRoute = false,
                             routeError = result.message
                         )
