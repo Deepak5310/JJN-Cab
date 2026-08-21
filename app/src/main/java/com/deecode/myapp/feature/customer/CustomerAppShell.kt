@@ -24,6 +24,7 @@ import com.deecode.myapp.ui.components.JJNLoadingIndicator
 fun CustomerAppShell(
     onLogout: () -> Unit,
     onNavigateToActiveBooking: () -> Unit = {},
+    onNavigateToRideDetails: (String) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: CustomerViewModel = hiltViewModel()
 ) {
@@ -182,7 +183,8 @@ fun CustomerAppShell(
                     CustomerBookingsScreen(
                         onBookRideClick = {
                             viewModel.onEvent(CustomerUiEvent.SelectTab(CustomerTab.HOME))
-                        }
+                        },
+                        onBookingClick = onNavigateToRideDetails
                     )
                 }
                 CustomerTab.PROFILE -> {
