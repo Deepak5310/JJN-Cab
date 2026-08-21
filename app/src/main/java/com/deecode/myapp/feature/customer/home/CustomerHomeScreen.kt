@@ -35,31 +35,52 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import com.deecode.myapp.domain.model.LocationPoint
+import com.deecode.myapp.domain.model.PlaceSuggestion
 import com.deecode.myapp.domain.model.User
+import com.deecode.myapp.feature.customer.LocationTarget
 import com.deecode.myapp.ui.components.JJNCard
 import com.deecode.myapp.ui.components.JJNOutlinedButton
 import com.deecode.myapp.ui.components.JJNOutlinedCard
 import com.deecode.myapp.ui.components.JJNPrimaryButton
 import com.deecode.myapp.ui.components.map.JJNMap
 import com.deecode.myapp.ui.theme.spacing
+import com.google.maps.android.compose.rememberCameraPositionState
 
 @Composable
 fun CustomerHomeScreen(
     user: User?,
     currentLocation: LocationPoint?,
+    pickupLocation: LocationPoint?,
+    destinationLocation: LocationPoint?,
     hasLocationPermission: Boolean,
     isLocating: Boolean,
     locationError: String?,
     isPermissionPermanentlyDenied: Boolean,
+    isSearchBottomSheetVisible: Boolean,
+    activeLocationTarget: LocationTarget,
+    searchQuery: String,
+    isSearchingPlaces: Boolean,
+    placeSuggestions: List<PlaceSuggestion>,
+    isSelectingOnMap: Boolean,
+    isReverseGeocoding: Boolean,
     onRequestLocation: () -> Unit,
     onPermissionDenied: (Boolean) -> Unit,
     onClearLocationError: () -> Unit,
+    onOpenPlaceSearch: (LocationTarget) -> Unit,
+    onClosePlaceSearch: () -> Unit,
+    onUpdateSearchQuery: (String) -> Unit,
+    onSelectPlaceSuggestion: (PlaceSuggestion) -> Unit,
+    onClearSelectedLocation: (LocationTarget) -> Unit,
+    onStartMapSelection: (LocationTarget) -> Unit,
+    onConfirmMapSelection: (Double, Double) -> Unit,
+    onCancelMapSelection: () -> Unit,
     onNavigateToBookings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
     val displayName = user?.name?.split(" ")?.firstOrNull() ?: "Rider"
+    val cameraPositionState = rememberCameraPositionState()
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
@@ -111,7 +132,7 @@ fun CustomerHomeScreen(
                     )
                 )
                 Text(
-                    text = "Where are you going today?",
+                    text = if (isSelectingOnMap) "Move map to choose exact point" else "Where are you going today?",
                     style = MaterialTheme.typography.bodyMedium.copy(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -137,19 +158,47 @@ fun CustomerHomeScreen(
 
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
 
-        // Google Maps Preview Container
+        // Google Maps Interactive Container
         JJNCard(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(220.dp),
+                .height(if (isSelectingOnMap) 320.dp else 220.dp),
             contentPadding = 0.dp,
-            elevation = 2.dp
+            elevation = 3.dp
         ) {
             JJNMap(
                 modifier = Modifier.fillMaxSize(),
                 currentLocation = currentLocation,
-                hasLocationPermission = hasLocationPermission
+                pickupLocation = pickupLocation,
+                destinationLocation = destinationLocation,
+                hasLocationPermission = hasLocationPermission,
+                isSelectingOnMap = isSelectingOnMap,
+                cameraPositionState = cameraPositionState
             )
+        }
+
+        // Map Selection Confirm / Cancel Buttons
+        if (isSelectingOnMap) {
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
+            ) {
+                JJNOutlinedButton(
+                    text = "Cancel",
+                    onClick = onCancelMapSelection,
+                    modifier = Modifier.weight(1f)
+                )
+                JJNPrimaryButton(
+                    text = if (isReverseGeocoding) "Locating..." else "Confirm Spot",
+                    onClick = {
+                        val targetLatLng = cameraPositionState.position.target
+                        onConfirmMapSelection(targetLatLng.latitude, targetLatLng.longitude)
+                    },
+                    modifier = Modifier.weight(1f),
+                    enabled = !isReverseGeocoding
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
@@ -185,37 +234,41 @@ fun CustomerHomeScreen(
             }
         }
 
-        // Pickup / Destination Card (Search Bar style preview)
+        // Pickup / Destination Card
         JJNCard(
             elevation = 3.dp,
             contentPadding = MaterialTheme.spacing.medium
         ) {
-            // Pickup location row (Clickable to fetch location on demand)
+            // Pickup location row
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(MaterialTheme.shapes.small)
                     .clickable {
-                        permissionLauncher.launch(
-                            arrayOf(
-                                Manifest.permission.ACCESS_FINE_LOCATION,
-                                Manifest.permission.ACCESS_COARSE_LOCATION
+                        if (hasLocationPermission) {
+                            onOpenPlaceSearch(LocationTarget.PICKUP)
+                        } else {
+                            permissionLauncher.launch(
+                                arrayOf(
+                                    Manifest.permission.ACCESS_FINE_LOCATION,
+                                    Manifest.permission.ACCESS_COARSE_LOCATION
+                                )
                             )
-                        )
+                        }
                     }
-                    .padding(vertical = 4.dp)
+                    .padding(vertical = 6.dp)
             ) {
                 Box(
                     modifier = Modifier
-                        .size(12.dp)
+                        .size(14.dp)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.primary)
                 )
                 Spacer(modifier = Modifier.width(MaterialTheme.spacing.medium))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Current Location (Pickup)",
+                        text = "Pickup Location",
                         style = MaterialTheme.typography.labelSmall.copy(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -229,61 +282,99 @@ fun CustomerHomeScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Fetching current GPS location...",
+                                text = "Detecting current location...",
                                 style = MaterialTheme.typography.bodyMedium.copy(
                                     color = MaterialTheme.colorScheme.primary
                                 )
                             )
                         }
-                    } else if (currentLocation != null) {
+                    } else if (pickupLocation != null) {
                         Text(
-                            text = "📍 Lat: ${
-                                String.format(
-                                    "%.4f",
-                                    currentLocation.latitude
-                                )
-                            }, Lng: ${String.format("%.4f", currentLocation.longitude)}",
+                            text = pickupLocation.address ?: "Lat: ${String.format("%.4f", pickupLocation.latitude)}, Lng: ${String.format("%.4f", pickupLocation.longitude)}",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
+                                color = MaterialTheme.colorScheme.onSurface
+                            ),
+                            maxLines = 1
                         )
                     } else {
                         Text(
-                            text = "Tap to detect your current location",
+                            text = "Tap to set pickup point",
                             style = MaterialTheme.typography.bodyMedium.copy(
-                                fontWeight = FontWeight.Medium
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         )
                     }
                 }
+
+                if (pickupLocation != null) {
+                    Text(
+                        text = "✕",
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .clickable { onClearSelectedLocation(LocationTarget.PICKUP) }
+                            .padding(8.dp),
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
 
             // Destination row
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.small)
+                    .clickable { onOpenPlaceSearch(LocationTarget.DESTINATION) }
+                    .padding(vertical = 6.dp)
             ) {
                 Box(
                     modifier = Modifier
-                        .size(12.dp)
+                        .size(14.dp)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.error)
                 )
                 Spacer(modifier = Modifier.width(MaterialTheme.spacing.medium))
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "Destination",
                         style = MaterialTheme.typography.labelSmall.copy(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     )
+                    if (destinationLocation != null) {
+                        Text(
+                            text = destinationLocation.address ?: "Lat: ${String.format("%.4f", destinationLocation.latitude)}, Lng: ${String.format("%.4f", destinationLocation.longitude)}",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            ),
+                            maxLines = 1
+                        )
+                    } else {
+                        Text(
+                            text = "Where to? (Search destination)",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        )
+                    }
+                }
+
+                if (destinationLocation != null) {
                     Text(
-                        text = "Where to?",
+                        text = "✕",
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .clickable { onClearSelectedLocation(LocationTarget.DESTINATION) }
+                            .padding(8.dp),
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     )
@@ -362,10 +453,26 @@ fun CustomerHomeScreen(
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
 
         // Primary Call to Action
+        val canRequestRide = pickupLocation != null && destinationLocation != null
         JJNPrimaryButton(
-            text = "Request JJN-Cab",
-            onClick = { /* Ready for future booking integration */ },
-            enabled = false
+            text = if (canRequestRide) "Ready to Request Ride" else "Select Pickup & Destination",
+            onClick = { /* Ready for future booking flow */ },
+            enabled = canRequestRide
+        )
+    }
+
+    // Place Search Modal Bottom Sheet
+    if (isSearchBottomSheetVisible) {
+        PlaceSearchBottomSheet(
+            target = activeLocationTarget,
+            searchQuery = searchQuery,
+            isSearching = isSearchingPlaces,
+            suggestions = placeSuggestions,
+            errorMessage = locationError,
+            onQueryChange = onUpdateSearchQuery,
+            onSelectSuggestion = onSelectPlaceSuggestion,
+            onSelectOnMap = { onStartMapSelection(activeLocationTarget) },
+            onDismiss = onClosePlaceSearch
         )
     }
 }

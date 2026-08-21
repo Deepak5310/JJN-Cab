@@ -100,10 +100,19 @@ fun CustomerAppShell(
                     CustomerHomeScreen(
                         user = uiState.user,
                         currentLocation = uiState.currentLocation,
+                        pickupLocation = uiState.pickupLocation,
+                        destinationLocation = uiState.destinationLocation,
                         hasLocationPermission = viewModel.hasLocationPermission(),
                         isLocating = uiState.isLocating,
                         locationError = uiState.locationError,
                         isPermissionPermanentlyDenied = uiState.isPermissionPermanentlyDenied,
+                        isSearchBottomSheetVisible = uiState.isSearchBottomSheetVisible,
+                        activeLocationTarget = uiState.activeLocationTarget,
+                        searchQuery = uiState.searchQuery,
+                        isSearchingPlaces = uiState.isSearchingPlaces,
+                        placeSuggestions = uiState.placeSuggestions,
+                        isSelectingOnMap = uiState.isSelectingOnMap,
+                        isReverseGeocoding = uiState.isReverseGeocoding,
                         onRequestLocation = {
                             viewModel.onEvent(CustomerUiEvent.RequestLocation)
                         },
@@ -112,6 +121,30 @@ fun CustomerAppShell(
                         },
                         onClearLocationError = {
                             viewModel.onEvent(CustomerUiEvent.ClearLocationError)
+                        },
+                        onOpenPlaceSearch = { target ->
+                            viewModel.onEvent(CustomerUiEvent.OpenPlaceSearch(target))
+                        },
+                        onClosePlaceSearch = {
+                            viewModel.onEvent(CustomerUiEvent.ClosePlaceSearch)
+                        },
+                        onUpdateSearchQuery = { query ->
+                            viewModel.onEvent(CustomerUiEvent.UpdateSearchQuery(query))
+                        },
+                        onSelectPlaceSuggestion = { suggestion ->
+                            viewModel.onEvent(CustomerUiEvent.SelectPlaceSuggestion(suggestion))
+                        },
+                        onClearSelectedLocation = { target ->
+                            viewModel.onEvent(CustomerUiEvent.ClearSelectedLocation(target))
+                        },
+                        onStartMapSelection = { target ->
+                            viewModel.onEvent(CustomerUiEvent.StartMapSelection(target))
+                        },
+                        onConfirmMapSelection = { lat, lng ->
+                            viewModel.onEvent(CustomerUiEvent.ConfirmMapSelection(lat, lng))
+                        },
+                        onCancelMapSelection = {
+                            viewModel.onEvent(CustomerUiEvent.CancelMapSelection)
                         },
                         onNavigateToBookings = {
                             viewModel.onEvent(CustomerUiEvent.SelectTab(CustomerTab.BOOKINGS))
