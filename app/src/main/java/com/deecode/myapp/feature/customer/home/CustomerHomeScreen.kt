@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import com.deecode.myapp.domain.model.LocationPoint
 import com.deecode.myapp.domain.model.PlaceSuggestion
+import com.deecode.myapp.domain.model.RouteInfo
 import com.deecode.myapp.domain.model.User
 import com.deecode.myapp.feature.customer.LocationTarget
 import com.deecode.myapp.ui.components.JJNCard
@@ -52,6 +53,9 @@ fun CustomerHomeScreen(
     currentLocation: LocationPoint?,
     pickupLocation: LocationPoint?,
     destinationLocation: LocationPoint?,
+    routeInfo: RouteInfo?,
+    isCalculatingRoute: Boolean,
+    routeError: String?,
     hasLocationPermission: Boolean,
     isLocating: Boolean,
     locationError: String?,
@@ -162,7 +166,7 @@ fun CustomerHomeScreen(
         JJNCard(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(if (isSelectingOnMap) 320.dp else 220.dp),
+                .height(if (isSelectingOnMap) 320.dp else 230.dp),
             contentPadding = 0.dp,
             elevation = 3.dp
         ) {
@@ -171,6 +175,7 @@ fun CustomerHomeScreen(
                 currentLocation = currentLocation,
                 pickupLocation = pickupLocation,
                 destinationLocation = destinationLocation,
+                routePoints = routeInfo?.points ?: emptyList(),
                 hasLocationPermission = hasLocationPermission,
                 isSelectingOnMap = isSelectingOnMap,
                 cameraPositionState = cameraPositionState
@@ -202,6 +207,117 @@ fun CustomerHomeScreen(
         }
 
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+
+        // Route Summary Card (Distance & ETA)
+        if (isCalculatingRoute) {
+            JJNCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = MaterialTheme.spacing.medium),
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(MaterialTheme.spacing.medium))
+                    Text(
+                        text = "Calculating fastest driving route & ETA...",
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)
+                    )
+                }
+            }
+        } else if (routeInfo != null) {
+            JJNCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = MaterialTheme.spacing.medium),
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                elevation = 2.dp
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(text = "🛣️", style = MaterialTheme.typography.bodySmall)
+                        }
+                        Spacer(modifier = Modifier.width(MaterialTheme.spacing.medium))
+                        Column {
+                            Text(
+                                text = "Route Distance",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                )
+                            )
+                            Text(
+                                text = routeInfo.formattedDistance,
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            )
+                        }
+                    }
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(text = "⏱️", style = MaterialTheme.typography.bodySmall)
+                        }
+                        Spacer(modifier = Modifier.width(MaterialTheme.spacing.medium))
+                        Column {
+                            Text(
+                                text = "Estimated Time",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                )
+                            )
+                            Text(
+                                text = routeInfo.formattedDuration,
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        } else if (!routeError.isNullOrBlank()) {
+            JJNCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = MaterialTheme.spacing.medium),
+                containerColor = MaterialTheme.colorScheme.errorContainer,
+                contentColor = MaterialTheme.colorScheme.onErrorContainer
+            ) {
+                Text(
+                    text = routeError,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
 
         // Location Error / Settings Banner
         if (!locationError.isNullOrBlank()) {
@@ -453,7 +569,7 @@ fun CustomerHomeScreen(
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
 
         // Primary Call to Action
-        val canRequestRide = pickupLocation != null && destinationLocation != null
+        val canRequestRide = pickupLocation != null && destinationLocation != null && routeInfo != null
         JJNPrimaryButton(
             text = if (canRequestRide) "Ready to Request Ride" else "Select Pickup & Destination",
             onClick = { /* Ready for future booking flow */ },
@@ -468,7 +584,6 @@ fun CustomerHomeScreen(
             searchQuery = searchQuery,
             isSearching = isSearchingPlaces,
             suggestions = placeSuggestions,
-            errorMessage = locationError,
             onQueryChange = onUpdateSearchQuery,
             onSelectSuggestion = onSelectPlaceSuggestion,
             onSelectOnMap = { onStartMapSelection(activeLocationTarget) },

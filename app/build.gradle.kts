@@ -18,8 +18,6 @@ android {
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"
-
-        manifestPlaceholders["MAPS_API_KEY"] = ""
     }
 
     buildTypes {
@@ -56,6 +54,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.okhttp)
 
     // Navigation
     implementation(libs.androidx.navigation.compose)

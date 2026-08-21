@@ -8,6 +8,7 @@ import com.deecode.myapp.domain.model.PlaceSuggestion
 import com.deecode.myapp.domain.repository.AuthRepository
 import com.deecode.myapp.domain.repository.LocationRepository
 import com.deecode.myapp.domain.repository.PlacesRepository
+import com.deecode.myapp.domain.repository.RouteRepository
 import com.deecode.myapp.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.FlowPreview
@@ -16,7 +17,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
@@ -29,13 +29,15 @@ class CustomerViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val userRepository: UserRepository,
     private val locationRepository: LocationRepository,
-    private val placesRepository: PlacesRepository
+    private val placesRepository: PlacesRepository,
+    private val routeRepository: RouteRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CustomerUiState(isLoading = true))
     val uiState: StateFlow<CustomerUiState> = _uiState.asStateFlow()
 
     private val _searchQueryFlow = MutableStateFlow("")
+    private var lastCalculatedPair: Pair<LocationPoint, LocationPoint>? = null
 
     init {
         observeUserProfile()
@@ -112,8 +114,7 @@ class CustomerViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isSearchingPlaces = false,
-                            placeSuggestions = emptyList(),
-                            locationError = result.message
+                            placeSuggestions = emptyList()
                         )
                     }
                 }
@@ -181,9 +182,10 @@ class CustomerViewModel @Inject constructor(
             }
             is CustomerUiEvent.ClearSelectedLocation -> {
                 when (event.target) {
-                    LocationTarget.PICKUP -> _uiState.update { it.copy(pickupLocation = null) }
-                    LocationTarget.DESTINATION -> _uiState.update { it.copy(destinationLocation = null) }
+                    LocationTarget.PICKUP -> _uiState.update { it.copy(pickupLocation = null, routeInfo = null, routeError = null) }
+                    LocationTarget.DESTINATION -> _uiState.update { it.copy(destinationLocation = null, routeInfo = null, routeError = null) }
                 }
+                lastCalculatedPair = null
             }
             is CustomerUiEvent.StartMapSelection -> {
                 _uiState.update {
@@ -199,6 +201,13 @@ class CustomerViewModel @Inject constructor(
             }
             is CustomerUiEvent.CancelMapSelection -> {
                 _uiState.update { it.copy(isSelectingOnMap = false) }
+            }
+            is CustomerUiEvent.CalculateRoute -> {
+                checkAndCalculateRoute()
+            }
+            is CustomerUiEvent.ClearRoute -> {
+                _uiState.update { it.copy(routeInfo = null, routeError = null) }
+                lastCalculatedPair = null
             }
         }
     }
@@ -223,6 +232,7 @@ class CustomerViewModel @Inject constructor(
                             )
                         }
                     }
+                    checkAndCalculateRoute()
                 }
                 is Resource.Error -> {
                     _uiState.update {
@@ -265,6 +275,49 @@ class CustomerViewModel @Inject constructor(
                     )
                 }
             }
+            checkAndCalculateRoute()
+        }
+    }
+
+    private fun checkAndCalculateRoute() {
+        val currentState = _uiState.value
+        val pickup = currentState.pickupLocation
+        val destination = currentState.destinationLocation
+
+        if (pickup != null && destination != null) {
+            val pair = Pair(pickup, destination)
+            if (pair != lastCalculatedPair) {
+                lastCalculatedPair = pair
+                calculateRoute(pickup, destination)
+            }
+        }
+    }
+
+    private fun calculateRoute(origin: LocationPoint, destination: LocationPoint) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isCalculatingRoute = true, routeError = null) }
+
+            when (val result = routeRepository.calculateRoute(origin, destination)) {
+                is Resource.Success -> {
+                    _uiState.update {
+                        it.copy(
+                            routeInfo = result.data,
+                            isCalculatingRoute = false,
+                            routeError = null
+                        )
+                    }
+                }
+                is Resource.Error -> {
+                    _uiState.update {
+                        it.copy(
+                            routeInfo = null,
+                            isCalculatingRoute = false,
+                            routeError = result.message
+                        )
+                    }
+                }
+                is Resource.Loading -> Unit
+            }
         }
     }
 
@@ -279,7 +332,6 @@ class CustomerViewModel @Inject constructor(
             when (val result = locationRepository.getCurrentLocation()) {
                 is Resource.Success -> {
                     val location = result.data
-                    // Reverse-geocode current GPS coordinates for clean street address
                     val addressResult = placesRepository.reverseGeocode(location.latitude, location.longitude)
                     val resolvedAddress = if (addressResult is Resource.Success) addressResult.data else "Current GPS Location"
                     val resolvedLocation = location.copy(address = resolvedAddress)
@@ -292,6 +344,7 @@ class CustomerViewModel @Inject constructor(
                             locationError = null
                         )
                     }
+                    checkAndCalculateRoute()
                 }
                 is Resource.Error -> {
                     _uiState.update {

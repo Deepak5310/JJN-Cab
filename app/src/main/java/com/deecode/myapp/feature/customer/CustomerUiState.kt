@@ -4,6 +4,7 @@ import com.deecode.myapp.core.base.UiEvent
 import com.deecode.myapp.core.base.UiState
 import com.deecode.myapp.domain.model.LocationPoint
 import com.deecode.myapp.domain.model.PlaceSuggestion
+import com.deecode.myapp.domain.model.RouteInfo
 import com.deecode.myapp.domain.model.User
 
 enum class CustomerTab {
@@ -36,7 +37,12 @@ data class CustomerUiState(
     val isSearchBottomSheetVisible: Boolean = false,
     val activeLocationTarget: LocationTarget = LocationTarget.DESTINATION,
     val isSelectingOnMap: Boolean = false,
-    val isReverseGeocoding: Boolean = false
+    val isReverseGeocoding: Boolean = false,
+
+    // Route Calculation
+    val routeInfo: RouteInfo? = null,
+    val isCalculatingRoute: Boolean = false,
+    val routeError: String? = null
 ) : UiState
 
 sealed interface CustomerUiEvent : UiEvent {
@@ -56,4 +62,8 @@ sealed interface CustomerUiEvent : UiEvent {
     data class StartMapSelection(val target: LocationTarget) : CustomerUiEvent
     data class ConfirmMapSelection(val latitude: Double, val longitude: Double) : CustomerUiEvent
     data object CancelMapSelection : CustomerUiEvent
+
+    // Route Calculation
+    data object CalculateRoute : CustomerUiEvent
+    data object ClearRoute : CustomerUiEvent
 }

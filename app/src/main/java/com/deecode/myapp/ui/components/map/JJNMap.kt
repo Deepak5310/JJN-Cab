@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -24,14 +23,17 @@ import com.deecode.myapp.domain.model.LocationPoint
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.JointType
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
+import com.google.android.gms.maps.model.RoundCap
 import com.google.maps.android.compose.CameraPositionState
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.Polyline
 import com.google.maps.android.compose.rememberCameraPositionState
 
 private val DefaultLocation = LatLng(28.6139, 77.2090) // Default fallback coordinates
@@ -42,6 +44,7 @@ fun JJNMap(
     currentLocation: LocationPoint? = null,
     pickupLocation: LocationPoint? = null,
     destinationLocation: LocationPoint? = null,
+    routePoints: List<LocationPoint> = emptyList(),
     hasLocationPermission: Boolean = false,
     isSelectingOnMap: Boolean = false,
     cameraPositionState: CameraPositionState = rememberCameraPositionState {
@@ -74,11 +77,23 @@ fun JJNMap(
         )
     }
 
-    // Auto animate camera when pickup / destination locations change
-    LaunchedEffect(pickupLocation, destinationLocation, currentLocation) {
+    val polylineLatLngs = remember(routePoints) {
+        routePoints.map { LatLng(it.latitude, it.longitude) }
+    }
+
+    // Auto animate camera when route / pickup / destination locations change
+    LaunchedEffect(routePoints, pickupLocation, destinationLocation, currentLocation) {
         if (isSelectingOnMap) return@LaunchedEffect
 
-        if (pickupLocation != null && destinationLocation != null) {
+        if (polylineLatLngs.isNotEmpty()) {
+            val builder = LatLngBounds.builder()
+            polylineLatLngs.forEach { builder.include(it) }
+            val bounds = builder.build()
+            cameraPositionState.animate(
+                CameraUpdateFactory.newLatLngBounds(bounds, 80),
+                durationMs = 900
+            )
+        } else if (pickupLocation != null && destinationLocation != null) {
             val bounds = LatLngBounds.builder()
                 .include(LatLng(pickupLocation.latitude, pickupLocation.longitude))
                 .include(LatLng(destinationLocation.latitude, destinationLocation.longitude))
@@ -115,6 +130,18 @@ fun JJNMap(
             properties = mapProperties,
             uiSettings = mapUiSettings
         ) {
+            // Driving Route Polyline
+            if (polylineLatLngs.isNotEmpty()) {
+                Polyline(
+                    points = polylineLatLngs,
+                    color = MaterialTheme.colorScheme.primary,
+                    width = 12f,
+                    startCap = RoundCap(),
+                    endCap = RoundCap(),
+                    jointType = JointType.ROUND
+                )
+            }
+
             // Pickup Marker
             if (pickupLocation != null) {
                 Marker(
