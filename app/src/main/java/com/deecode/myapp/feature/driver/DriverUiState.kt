@@ -2,6 +2,7 @@ package com.deecode.myapp.feature.driver
 
 import com.deecode.myapp.core.base.UiEvent
 import com.deecode.myapp.core.base.UiState
+import com.deecode.myapp.domain.model.Booking
 import com.deecode.myapp.domain.model.User
 
 enum class DriverTab {
@@ -19,7 +20,10 @@ data class DriverUiState(
     val errorMessage: String? = null,
     val isOnline: Boolean = false,
     val isUpdatingAvailability: Boolean = false,
-    val availabilityError: String? = null
+    val availabilityError: String? = null,
+    val pendingBookings: List<Booking> = emptyList(),
+    val isLoadingRequests: Boolean = false,
+    val requestsError: String? = null
 ) : UiState
 
 sealed interface DriverUiEvent : UiEvent {
@@ -28,4 +32,5 @@ sealed interface DriverUiEvent : UiEvent {
     data object Refresh : DriverUiEvent
     data object ClearError : DriverUiEvent
     data object ClearAvailabilityError : DriverUiEvent
+    data object RefreshRequests : DriverUiEvent
 }

@@ -10,4 +10,5 @@ interface BookingRepository {
     fun observeBooking(bookingId: String): Flow<Resource<Booking>>
     fun observeCustomerBookings(customerId: String): Flow<Resource<List<Booking>>>
     fun observeActiveCustomerBooking(customerId: String): Flow<Resource<Booking?>>
+    fun observePendingBookings(): Flow<Resource<List<Booking>>>
 }

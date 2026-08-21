@@ -185,7 +185,13 @@ fun DriverAppShell(
                     )
                 }
                 DriverTab.REQUESTS -> {
-                    DriverRequestsScreen(isOnline = uiState.isOnline)
+                    DriverRequestsScreen(
+                        isOnline = uiState.isOnline,
+                        pendingBookings = uiState.pendingBookings,
+                        isLoading = uiState.isLoadingRequests,
+                        errorMessage = uiState.requestsError,
+                        onRefresh = { viewModel.onEvent(DriverUiEvent.RefreshRequests) }
+                    )
                 }
                 DriverTab.ACTIVE_RIDE -> {
                     DriverActiveRideScreen()

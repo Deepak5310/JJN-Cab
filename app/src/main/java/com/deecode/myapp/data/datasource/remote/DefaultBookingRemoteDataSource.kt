@@ -84,4 +84,21 @@ class DefaultBookingRemoteDataSource @Inject constructor(
 
         awaitClose { listener.remove() }
     }
+
+    override fun observePendingBookings(): Flow<List<BookingDto>> = callbackFlow {
+        val listener = bookingsCollection
+            .whereEqualTo("status", "REQUESTED")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                val dtos = snapshot?.toObjects(BookingDto::class.java) ?: emptyList()
+                val eligible = dtos.filter { it.driverId == null }
+                    .sortedByDescending { it.createdAt?.toDate()?.time ?: 0L }
+                trySend(eligible)
+            }
+
+        awaitClose { listener.remove() }
+    }
 }

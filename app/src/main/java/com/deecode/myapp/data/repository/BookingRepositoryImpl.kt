@@ -67,4 +67,14 @@ class BookingRepositoryImpl @Inject constructor(
             .catch { emit(Resource.Error(it.localizedMessage ?: "Failed to observe active booking", it)) }
             .flowOn(dispatchers.io)
     }
+
+    override fun observePendingBookings(): Flow<Resource<List<Booking>>> {
+        return remoteDataSource.observePendingBookings()
+            .map { dtoList ->
+                val domainList = dtoList.map { it.toDomain() }
+                Resource.Success(domainList) as Resource<List<Booking>>
+            }
+            .catch { emit(Resource.Error(it.localizedMessage ?: "Failed to observe pending bookings", it)) }
+            .flowOn(dispatchers.io)
+    }
 }

@@ -9,4 +9,5 @@ interface BookingRemoteDataSource {
     suspend fun getBooking(bookingId: String): Resource<BookingDto>
     fun observeBooking(bookingId: String): Flow<BookingDto?>
     fun observeCustomerBookings(customerId: String): Flow<List<BookingDto>>
+    fun observePendingBookings(): Flow<List<BookingDto>>
 }

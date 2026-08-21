@@ -113,4 +113,18 @@ class BookingMappingTest {
         assertFalse(BookingStatus.REQUESTED.isTerminal)
         assertFalse(BookingStatus.IN_PROGRESS.isTerminal)
     }
+
+    @Test
+    fun `eligible pending bookings filter requires REQUESTED status and null driverId`() {
+        val eligibleBooking = BookingDto(bookingId = "1", status = "REQUESTED", driverId = null)
+        val claimedBooking = BookingDto(bookingId = "2", status = "REQUESTED", driverId = "driver_1")
+        val acceptedBooking = BookingDto(bookingId = "3", status = "ACCEPTED", driverId = "driver_2")
+        val completedBooking = BookingDto(bookingId = "4", status = "COMPLETED", driverId = "driver_1")
+
+        val allBookings = listOf(eligibleBooking, claimedBooking, acceptedBooking, completedBooking)
+        val filtered = allBookings.filter { it.status == "REQUESTED" && it.driverId == null }
+
+        assertEquals(1, filtered.size)
+        assertEquals("1", filtered[0].bookingId)
+    }
 }

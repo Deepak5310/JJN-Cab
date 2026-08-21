@@ -5,9 +5,11 @@ import androidx.lifecycle.viewModelScope
 import com.deecode.myapp.core.model.UserRole
 import com.deecode.myapp.core.result.Resource
 import com.deecode.myapp.domain.repository.AuthRepository
+import com.deecode.myapp.domain.repository.BookingRepository
 import com.deecode.myapp.domain.repository.DriverRepository
 import com.deecode.myapp.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,11 +21,14 @@ import javax.inject.Inject
 class DriverViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val userRepository: UserRepository,
-    private val driverRepository: DriverRepository
+    private val driverRepository: DriverRepository,
+    private val bookingRepository: BookingRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DriverUiState())
     val uiState: StateFlow<DriverUiState> = _uiState.asStateFlow()
+
+    private var pendingRequestsJob: Job? = null
 
     init {
         observeUserProfile()
@@ -81,12 +86,14 @@ class DriverViewModel @Inject constructor(
             driverRepository.observeAvailability(driverId).collect { resource ->
                 when (resource) {
                     is Resource.Success -> {
+                        val isOnline = resource.data.isOnline
                         _uiState.update {
                             it.copy(
-                                isOnline = resource.data.isOnline,
+                                isOnline = isOnline,
                                 availabilityError = null
                             )
                         }
+                        syncRequestsStream(isOnline)
                     }
                     is Resource.Error -> {
                         _uiState.update {
@@ -99,6 +106,50 @@ class DriverViewModel @Inject constructor(
         }
     }
 
+    private fun syncRequestsStream(isOnline: Boolean) {
+        if (isOnline) {
+            if (pendingRequestsJob == null || pendingRequestsJob?.isActive == false) {
+                pendingRequestsJob = viewModelScope.launch {
+                    _uiState.update { it.copy(isLoadingRequests = true, requestsError = null) }
+                    bookingRepository.observePendingBookings().collect { resource ->
+                        when (resource) {
+                            is Resource.Success -> {
+                                _uiState.update {
+                                    it.copy(
+                                        pendingBookings = resource.data,
+                                        isLoadingRequests = false,
+                                        requestsError = null
+                                    )
+                                }
+                            }
+                            is Resource.Error -> {
+                                _uiState.update {
+                                    it.copy(
+                                        isLoadingRequests = false,
+                                        requestsError = resource.message
+                                    )
+                                }
+                            }
+                            is Resource.Loading -> {
+                                _uiState.update { it.copy(isLoadingRequests = true) }
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            pendingRequestsJob?.cancel()
+            pendingRequestsJob = null
+            _uiState.update {
+                it.copy(
+                    pendingBookings = emptyList(),
+                    isLoadingRequests = false,
+                    requestsError = null
+                )
+            }
+        }
+    }
+
     fun onEvent(event: DriverUiEvent) {
         when (event) {
             is DriverUiEvent.SelectTab -> _uiState.update { it.copy(selectedTab = event.tab) }
@@ -106,6 +157,7 @@ class DriverViewModel @Inject constructor(
             is DriverUiEvent.Refresh -> observeUserProfile()
             is DriverUiEvent.ClearError -> _uiState.update { it.copy(errorMessage = null) }
             is DriverUiEvent.ClearAvailabilityError -> _uiState.update { it.copy(availabilityError = null) }
+            is DriverUiEvent.RefreshRequests -> syncRequestsStream(_uiState.value.isOnline)
         }
     }
 
@@ -128,6 +180,7 @@ class DriverViewModel @Inject constructor(
                             availabilityError = null
                         )
                     }
+                    syncRequestsStream(targetStatus)
                 }
                 is Resource.Error -> {
                     _uiState.update {
