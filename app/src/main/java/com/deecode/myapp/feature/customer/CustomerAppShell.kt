@@ -3,7 +3,6 @@ package com.deecode.myapp.feature.customer
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -100,6 +99,19 @@ fun CustomerAppShell(
                 CustomerTab.HOME -> {
                     CustomerHomeScreen(
                         user = uiState.user,
+                        currentLocation = uiState.currentLocation,
+                        isLocating = uiState.isLocating,
+                        locationError = uiState.locationError,
+                        isPermissionPermanentlyDenied = uiState.isPermissionPermanentlyDenied,
+                        onRequestLocation = {
+                            viewModel.onEvent(CustomerUiEvent.RequestLocation)
+                        },
+                        onPermissionDenied = { permanentlyDenied ->
+                            viewModel.onEvent(CustomerUiEvent.OnLocationPermissionDenied(permanentlyDenied))
+                        },
+                        onClearLocationError = {
+                            viewModel.onEvent(CustomerUiEvent.ClearLocationError)
+                        },
                         onNavigateToBookings = {
                             viewModel.onEvent(CustomerUiEvent.SelectTab(CustomerTab.BOOKINGS))
                         }

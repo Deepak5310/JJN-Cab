@@ -13,6 +13,7 @@ kotlinxSerialization = "1.11.0"
 hiltNavigationCompose = "1.4.0"
 googleServices = "4.5.0"
 firebaseBom = "34.18.0"
+playServicesLocation = "21.4.0"
 
 [libraries]
 # AndroidX Core & Lifecycle
@@ -49,6 +50,9 @@ firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.r
 firebase-common = { group = "com.google.firebase", name = "firebase-common" }
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth" }
 firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore" }
+
+# Location
+play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

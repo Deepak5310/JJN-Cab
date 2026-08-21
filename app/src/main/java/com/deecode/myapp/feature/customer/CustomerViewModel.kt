@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.deecode.myapp.core.result.Resource
 import com.deecode.myapp.domain.repository.AuthRepository
+import com.deecode.myapp.domain.repository.LocationRepository
 import com.deecode.myapp.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,7 +17,8 @@ import javax.inject.Inject
 @HiltViewModel
 class CustomerViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val locationRepository: LocationRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CustomerUiState(isLoading = true))
@@ -71,6 +73,56 @@ class CustomerViewModel @Inject constructor(
             }
             is CustomerUiEvent.ClearError -> {
                 _uiState.update { it.copy(errorMessage = null) }
+            }
+            is CustomerUiEvent.RequestLocation -> {
+                fetchCurrentLocation()
+            }
+            is CustomerUiEvent.OnLocationPermissionDenied -> {
+                _uiState.update {
+                    it.copy(
+                        isLocating = false,
+                        isPermissionPermanentlyDenied = event.permanentlyDenied,
+                        locationError = if (event.permanentlyDenied) {
+                            "Location permission permanently denied. Please enable it in App Settings."
+                        } else {
+                            "Location permission was denied. Location is needed to determine your pickup point."
+                        }
+                    )
+                }
+            }
+            is CustomerUiEvent.ClearLocationError -> {
+                _uiState.update { it.copy(locationError = null) }
+            }
+        }
+    }
+
+    fun hasLocationPermission(): Boolean {
+        return locationRepository.hasLocationPermission()
+    }
+
+    fun fetchCurrentLocation() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLocating = true, locationError = null) }
+
+            when (val result = locationRepository.getCurrentLocation()) {
+                is Resource.Success -> {
+                    _uiState.update {
+                        it.copy(
+                            currentLocation = result.data,
+                            isLocating = false,
+                            locationError = null
+                        )
+                    }
+                }
+                is Resource.Error -> {
+                    _uiState.update {
+                        it.copy(
+                            isLocating = false,
+                            locationError = result.message
+                        )
+                    }
+                }
+                is Resource.Loading -> Unit
             }
         }
     }
