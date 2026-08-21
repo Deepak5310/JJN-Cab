@@ -69,6 +69,7 @@ dependencies {
     implementation(libs.firebase.common)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
+    implementation(libs.firebase.messaging)
 
     // Location & Maps
     implementation(libs.play.services.location)

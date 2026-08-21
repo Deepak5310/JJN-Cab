@@ -62,6 +62,7 @@ firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.r
 firebase-common = { group = "com.google.firebase", name = "firebase-common" }
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth" }
 firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore" }
+firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging" }
 
 # Location & Maps
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }

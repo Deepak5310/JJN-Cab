@@ -11,6 +11,7 @@ import com.deecode.myapp.domain.repository.BookingRepository
 import com.deecode.myapp.domain.repository.DriverRepository
 import com.deecode.myapp.domain.repository.DriverTrackingRepository
 import com.deecode.myapp.domain.repository.LocationRepository
+import com.deecode.myapp.domain.repository.NotificationRepository
 import com.deecode.myapp.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -28,7 +29,8 @@ class DriverViewModel @Inject constructor(
     private val driverRepository: DriverRepository,
     private val bookingRepository: BookingRepository,
     private val locationRepository: LocationRepository,
-    private val driverTrackingRepository: DriverTrackingRepository
+    private val driverTrackingRepository: DriverTrackingRepository,
+    private val notificationRepository: NotificationRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DriverUiState())
@@ -72,6 +74,7 @@ class DriverViewModel @Inject constructor(
                         if (isAuthorized) {
                             observeDriverAvailability(user.uid)
                             observeActiveDriverBooking(user.uid)
+                            notificationRepository.syncFcmToken(user.uid)
                         }
                     }
                     is Resource.Error -> {
@@ -415,6 +418,10 @@ class DriverViewModel @Inject constructor(
     fun signOut(onComplete: () -> Unit) {
         viewModelScope.launch {
             stopLocationTracking()
+            val currentUid = authRepository.currentUser?.uid
+            if (currentUid != null) {
+                notificationRepository.clearFcmToken(currentUid)
+            }
             authRepository.signOut()
             onComplete()
         }

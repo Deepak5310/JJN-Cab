@@ -11,6 +11,7 @@ import com.deecode.myapp.domain.model.PlaceSuggestion
 import com.deecode.myapp.domain.repository.AuthRepository
 import com.deecode.myapp.domain.repository.BookingRepository
 import com.deecode.myapp.domain.repository.LocationRepository
+import com.deecode.myapp.domain.repository.NotificationRepository
 import com.deecode.myapp.domain.repository.PlacesRepository
 import com.deecode.myapp.domain.repository.RouteRepository
 import com.deecode.myapp.domain.repository.UserRepository
@@ -36,7 +37,8 @@ class CustomerViewModel @Inject constructor(
     private val placesRepository: PlacesRepository,
     private val routeRepository: RouteRepository,
     private val fareCalculator: FareCalculator,
-    private val bookingRepository: BookingRepository
+    private val bookingRepository: BookingRepository,
+    private val notificationRepository: NotificationRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CustomerUiState(isLoading = true))
@@ -80,6 +82,7 @@ class CustomerViewModel @Inject constructor(
                                 errorMessage = null
                             )
                         }
+                        notificationRepository.syncFcmToken(resource.data.uid)
                     }
                     is Resource.Error -> {
                         _uiState.update {
@@ -488,6 +491,10 @@ class CustomerViewModel @Inject constructor(
 
     fun signOut(onComplete: () -> Unit) {
         viewModelScope.launch {
+            val currentUid = authRepository.currentUser?.uid
+            if (currentUid != null) {
+                notificationRepository.clearFcmToken(currentUid)
+            }
             authRepository.signOut()
             onComplete()
         }
