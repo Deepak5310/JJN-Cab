@@ -40,12 +40,14 @@ import com.deecode.myapp.ui.components.JJNCard
 import com.deecode.myapp.ui.components.JJNOutlinedButton
 import com.deecode.myapp.ui.components.JJNOutlinedCard
 import com.deecode.myapp.ui.components.JJNPrimaryButton
+import com.deecode.myapp.ui.components.map.JJNMap
 import com.deecode.myapp.ui.theme.spacing
 
 @Composable
 fun CustomerHomeScreen(
     user: User?,
     currentLocation: LocationPoint?,
+    hasLocationPermission: Boolean,
     isLocating: Boolean,
     locationError: String?,
     isPermissionPermanentlyDenied: Boolean,
@@ -74,10 +76,10 @@ fun CustomerHomeScreen(
                     it,
                     Manifest.permission.ACCESS_FINE_LOCATION
                 ) ||
-                        ActivityCompat.shouldShowRequestPermissionRationale(
-                            it,
-                            Manifest.permission.ACCESS_COARSE_LOCATION
-                        )
+                ActivityCompat.shouldShowRequestPermissionRationale(
+                    it,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
             } ?: true
 
             onPermissionDenied(!shouldShowRationale)
@@ -133,7 +135,24 @@ fun CustomerHomeScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+
+        // Google Maps Preview Container
+        JJNCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(220.dp),
+            contentPadding = 0.dp,
+            elevation = 2.dp
+        ) {
+            JJNMap(
+                modifier = Modifier.fillMaxSize(),
+                currentLocation = currentLocation,
+                hasLocationPermission = hasLocationPermission
+            )
+        }
+
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
 
         // Location Error / Settings Banner
         if (!locationError.isNullOrBlank()) {

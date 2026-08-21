@@ -100,6 +100,7 @@ fun CustomerAppShell(
                     CustomerHomeScreen(
                         user = uiState.user,
                         currentLocation = uiState.currentLocation,
+                        hasLocationPermission = viewModel.hasLocationPermission(),
                         isLocating = uiState.isLocating,
                         locationError = uiState.locationError,
                         isPermissionPermanentlyDenied = uiState.isPermissionPermanentlyDenied,
