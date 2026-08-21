@@ -8,6 +8,7 @@ import com.deecode.myapp.data.model.DriverDto
 import com.deecode.myapp.data.model.UserDto
 import com.deecode.myapp.domain.model.AdminDashboardStats
 import com.deecode.myapp.domain.model.Booking
+import com.deecode.myapp.domain.model.BookingStateMachine
 import com.deecode.myapp.domain.model.BookingStatus
 import com.deecode.myapp.domain.model.DriverManagementItem
 import com.deecode.myapp.domain.model.User
@@ -228,13 +229,9 @@ class AdminRepositoryImpl @Inject constructor(
                     throw IllegalStateException("Booking not found.")
                 }
 
-                val currentStatus = snapshot.getString("status") ?: ""
-                if (currentStatus == "COMPLETED") {
-                    throw IllegalStateException("Cannot cancel a completed ride.")
-                }
-
-                if (currentStatus in listOf("CANCELLED", "CANCELLED_BY_CUSTOMER", "CANCELLED_BY_DRIVER")) {
-                    throw IllegalStateException("Booking is already cancelled.")
+                val currentStatus = BookingStateMachine.canonicalize(snapshot.getString("status"))
+                if (!BookingStateMachine.canCancel(currentStatus, UserRole.ADMIN)) {
+                    throw IllegalStateException("Cannot cancel booking at current status: ${currentStatus.name}")
                 }
 
                 val cancellationUpdates = mapOf(

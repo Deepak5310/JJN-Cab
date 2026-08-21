@@ -20,6 +20,10 @@ service cloud.firestore {
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMIN';
     }
 
+    function isTerminalStatus(status) {
+      return status in ['COMPLETED', 'CANCELLED', 'CANCELLED_BY_CUSTOMER', 'CANCELLED_BY_DRIVER', 'CANCELLED_BY_ADMIN', 'NO_DRIVERS_AVAILABLE'];
+    }
+
     // Users collection
     match /users/{userId} {
       allow read: if isAuthenticated();
@@ -69,32 +73,36 @@ service cloud.firestore {
 
       // Update: Customer can update (e.g. cancel) or driver can accept / update progress / cancel, or Admin
       allow update: if isAuthenticated() && (
-        // Admin updating / cancelling active booking while preserving customer, driver, and fare integrity
+        // Admin cancelling active booking before terminal state while preserving customer, driver, and fare integrity
         (isAdmin() &&
+         !isTerminalStatus(resource.data.status) &&
          request.resource.data.customerId == resource.data.customerId &&
          request.resource.data.driverId == resource.data.driverId &&
          request.resource.data.estimatedFare == resource.data.estimatedFare &&
-         resource.data.status != 'COMPLETED') ||
-        // Customer cancelling/updating their own booking (cannot set COMPLETED or change driver)
+         request.resource.data.status in ['CANCELLED', 'CANCELLED_BY_ADMIN']) ||
+        // Customer cancelling their own non-terminal booking before ride start
         (resource.data.customerId == request.auth.uid && 
          request.resource.data.customerId == resource.data.customerId &&
          request.resource.data.driverId == resource.data.driverId &&
-         resource.data.status != 'COMPLETED' &&
-         (request.resource.data.status in ['CANCELLED', 'CANCELLED_BY_CUSTOMER'] ? request.resource.data.cancelledBy == request.auth.uid : true)) ||
+         !isTerminalStatus(resource.data.status) &&
+         resource.data.status in ['REQUESTED', 'SEARCHING_DRIVER', 'ACCEPTED', 'ASSIGNED', 'DRIVER_ARRIVING', 'ARRIVING'] &&
+         request.resource.data.status in ['CANCELLED', 'CANCELLED_BY_CUSTOMER'] &&
+         request.resource.data.cancelledBy == request.auth.uid) ||
         // Assigned driver updating trip state with valid forward transitions or cancelling
         (resource.data.driverId == request.auth.uid &&
          request.resource.data.driverId == resource.data.driverId &&
          request.resource.data.customerId == resource.data.customerId &&
-         resource.data.status != 'COMPLETED' &&
+         !isTerminalStatus(resource.data.status) &&
          ((resource.data.status in ['ACCEPTED', 'ASSIGNED'] && request.resource.data.status in ['DRIVER_ARRIVING', 'ARRIVING']) ||
           (resource.data.status in ['DRIVER_ARRIVING', 'ARRIVING'] && request.resource.data.status in ['IN_PROGRESS', 'STARTED']) ||
           (resource.data.status in ['IN_PROGRESS', 'STARTED'] && request.resource.data.status == 'COMPLETED') ||
-          (request.resource.data.status in ['CANCELLED', 'CANCELLED_BY_DRIVER'] && request.resource.data.cancelledBy == request.auth.uid))) ||
+          (resource.data.status in ['ACCEPTED', 'ASSIGNED', 'DRIVER_ARRIVING', 'ARRIVING', 'IN_PROGRESS', 'STARTED'] &&
+           request.resource.data.status in ['CANCELLED', 'CANCELLED_BY_DRIVER'] && request.resource.data.cancelledBy == request.auth.uid))) ||
         // Unassigned driver claiming the booking
         (resource.data.driverId == null && 
          resource.data.status in ['REQUESTED', 'SEARCHING_DRIVER'] &&
          request.resource.data.driverId == request.auth.uid &&
-         request.resource.data.status == 'ACCEPTED' &&
+         request.resource.data.status in ['ACCEPTED', 'ASSIGNED'] &&
          request.resource.data.customerId == resource.data.customerId)
       );
 

@@ -1,7 +1,10 @@
 package com.deecode.myapp.data.datasource.remote
 
+import com.deecode.myapp.core.model.UserRole
 import com.deecode.myapp.core.result.Resource
 import com.deecode.myapp.data.model.BookingDto
+import com.deecode.myapp.domain.model.BookingStateMachine
+import com.deecode.myapp.domain.model.BookingStatus
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -33,7 +36,10 @@ class DefaultBookingRemoteDataSource @Inject constructor(
                 bookingsCollection.document()
             }
 
-            val finalDto = bookingDto.copy(bookingId = docRef.id)
+            val finalDto = bookingDto.copy(
+                bookingId = docRef.id,
+                status = BookingStatus.REQUESTED.name
+            )
             docRef.set(finalDto).await()
             Resource.Success(docRef.id)
         } catch (e: Exception) {
@@ -87,7 +93,7 @@ class DefaultBookingRemoteDataSource @Inject constructor(
 
     override fun observePendingBookings(): Flow<List<BookingDto>> = callbackFlow {
         val listener = bookingsCollection
-            .whereEqualTo("status", "REQUESTED")
+            .whereEqualTo("status", BookingStatus.REQUESTED.name)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     close(error)
@@ -119,9 +125,9 @@ class DefaultBookingRemoteDataSource @Inject constructor(
                 }
 
                 val currentDriverId = snapshot.getString("driverId")
-                val currentStatus = snapshot.getString("status")
+                val currentStatus = BookingStateMachine.canonicalize(snapshot.getString("status"))
 
-                if (currentDriverId != null || currentStatus != "REQUESTED") {
+                if (!BookingStateMachine.canDriverAccept(currentStatus, currentDriverId)) {
                     throw IllegalStateException("ALREADY_TAKEN")
                 }
 
@@ -129,7 +135,7 @@ class DefaultBookingRemoteDataSource @Inject constructor(
                     docRef,
                     mapOf(
                         "driverId" to driverId,
-                        "status" to "ACCEPTED",
+                        "status" to BookingStatus.ACCEPTED.name,
                         "updatedAt" to FieldValue.serverTimestamp()
                     )
                 )
@@ -184,28 +190,21 @@ class DefaultBookingRemoteDataSource @Inject constructor(
                 }
 
                 val currentDriver = snapshot.getString("driverId")
-                val currentStatus = snapshot.getString("status")
+                val currentStatus = BookingStateMachine.canonicalize(snapshot.getString("status"))
+                val targetStatus = BookingStateMachine.canonicalize(newStatus)
 
                 if (currentDriver != driverId) {
                     throw IllegalStateException("You are not the assigned driver for this ride.")
                 }
 
-                val isValidTransition = when (newStatus) {
-                    "DRIVER_ARRIVING", "ARRIVING" ->
-                        currentStatus == "ACCEPTED" || currentStatus == "ASSIGNED"
-                    "IN_PROGRESS", "STARTED" ->
-                        currentStatus == "DRIVER_ARRIVING" || currentStatus == "ARRIVING"
-                    else -> false
-                }
-
-                if (!isValidTransition) {
-                    throw IllegalStateException("Invalid status transition from $currentStatus to $newStatus.")
+                if (!BookingStateMachine.canDriverTransition(currentStatus, targetStatus)) {
+                    throw IllegalStateException("Invalid status transition from ${currentStatus.name} to ${targetStatus.name}.")
                 }
 
                 transaction.update(
                     docRef,
                     mapOf(
-                        "status" to newStatus,
+                        "status" to targetStatus.name,
                         "updatedAt" to FieldValue.serverTimestamp()
                     )
                 )
@@ -239,14 +238,14 @@ class DefaultBookingRemoteDataSource @Inject constructor(
                 }
 
                 val currentDriver = snapshot.getString("driverId")
-                val currentStatus = snapshot.getString("status")
+                val currentStatus = BookingStateMachine.canonicalize(snapshot.getString("status"))
 
                 if (currentDriver != driverId) {
                     throw IllegalStateException("You are not the assigned driver for this ride.")
                 }
 
-                if (currentStatus != "IN_PROGRESS" && currentStatus != "STARTED") {
-                    throw IllegalStateException("Ride can only be completed when STARTED/IN_PROGRESS. Current status: $currentStatus")
+                if (!BookingStateMachine.canComplete(currentStatus)) {
+                    throw IllegalStateException("Ride can only be completed when IN_PROGRESS. Current status: ${currentStatus.name}")
                 }
 
                 val estimatedFare = snapshot.getDouble("estimatedFare") ?: 0.0
@@ -254,7 +253,7 @@ class DefaultBookingRemoteDataSource @Inject constructor(
                 val estimatedDuration = snapshot.getLong("estimatedDurationSeconds") ?: 0L
 
                 val updates = mutableMapOf<String, Any>(
-                    "status" to "COMPLETED",
+                    "status" to BookingStatus.COMPLETED.name,
                     "completedAt" to FieldValue.serverTimestamp(),
                     "updatedAt" to FieldValue.serverTimestamp(),
                     "finalFare" to (finalFare ?: estimatedFare),
@@ -267,7 +266,7 @@ class DefaultBookingRemoteDataSource @Inject constructor(
 
             try {
                 firestore.collection("driver_locations").document(bookingId).delete().await()
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 // Ignore cleanup error
             }
 
@@ -294,24 +293,25 @@ class DefaultBookingRemoteDataSource @Inject constructor(
 
                 val customerId = snapshot.getString("customerId")
                 val driverId = snapshot.getString("driverId")
-                val currentStatus = snapshot.getString("status")
+                val currentStatus = BookingStateMachine.canonicalize(snapshot.getString("status"))
 
                 if (currentUid != customerId && currentUid != driverId) {
                     throw IllegalStateException("Unauthorized: Only the assigned customer or driver can cancel this booking.")
                 }
 
-                if (currentStatus == "COMPLETED") {
-                    throw IllegalStateException("Cannot cancel a completed ride.")
+                val role = if (currentUid == customerId) UserRole.CUSTOMER else UserRole.DRIVER
+                if (!BookingStateMachine.canCancel(currentStatus, role)) {
+                    if (BookingStateMachine.isTerminal(currentStatus)) {
+                        throw IllegalStateException("This booking is already closed or completed.")
+                    } else {
+                        throw IllegalStateException("Cannot cancel booking at current status: ${currentStatus.name}.")
+                    }
                 }
 
-                if (currentStatus in setOf("CANCELLED", "CANCELLED_BY_CUSTOMER", "CANCELLED_BY_DRIVER", "NO_DRIVERS_AVAILABLE")) {
-                    throw IllegalStateException("This booking is already cancelled or closed.")
-                }
-
-                val newStatus = if (currentUid == customerId) "CANCELLED_BY_CUSTOMER" else "CANCELLED_BY_DRIVER"
+                val newStatus = if (currentUid == customerId) BookingStatus.CANCELLED_BY_CUSTOMER else BookingStatus.CANCELLED_BY_DRIVER
 
                 val updates = mapOf(
-                    "status" to newStatus,
+                    "status" to newStatus.name,
                     "cancelledBy" to currentUid,
                     "cancellationReason" to reason,
                     "cancelledAt" to FieldValue.serverTimestamp(),
@@ -323,7 +323,7 @@ class DefaultBookingRemoteDataSource @Inject constructor(
 
             try {
                 firestore.collection("driver_locations").document(bookingId).delete().await()
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 // Ignore cleanup error
             }
 
