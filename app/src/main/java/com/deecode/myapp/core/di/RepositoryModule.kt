@@ -10,6 +10,7 @@ import com.deecode.myapp.data.datasource.remote.DriverTrackingRemoteDataSource
 import com.deecode.myapp.data.datasource.remote.FirebaseAuthRemoteDataSourceImpl
 import com.deecode.myapp.data.datasource.remote.FirestoreUserRemoteDataSourceImpl
 import com.deecode.myapp.data.datasource.remote.UserRemoteDataSource
+import com.deecode.myapp.data.repository.AdminRepositoryImpl
 import com.deecode.myapp.data.repository.AuthRepositoryImpl
 import com.deecode.myapp.data.repository.BookingRepositoryImpl
 import com.deecode.myapp.data.repository.DriverRepositoryImpl
@@ -17,6 +18,7 @@ import com.deecode.myapp.data.repository.DriverTrackingRepositoryImpl
 import com.deecode.myapp.data.repository.NotificationRepositoryImpl
 import com.deecode.myapp.data.repository.RatingRepositoryImpl
 import com.deecode.myapp.data.repository.UserRepositoryImpl
+import com.deecode.myapp.domain.repository.AdminRepository
 import com.deecode.myapp.domain.repository.AuthRepository
 import com.deecode.myapp.domain.repository.BookingRepository
 import com.deecode.myapp.domain.repository.DriverRepository
@@ -33,6 +35,12 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
+
+    @Binds
+    @Singleton
+    abstract fun bindAdminRepository(
+        adminRepositoryImpl: AdminRepositoryImpl
+    ): AdminRepository
 
     @Binds
     @Singleton

@@ -15,18 +15,23 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == driverId;
     }
 
+    function isAdmin() {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMIN';
+    }
+
     // Users collection
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow write: if isCustomer(userId);
+      allow write: if isCustomer(userId) || isAdmin();
     }
 
     // Drivers collection
     match /drivers/{driverId} {
       // Read: authenticated users (customers matching rides, drivers, admins)
       allow read: if isAuthenticated();
-      // Write: driver can ONLY update their own document
-      allow write: if isDriver(driverId);
+      // Write: driver can ONLY update their own document, or Admin
+      allow write: if isDriver(driverId) || isAdmin();
     }
 
     // Bookings collection
@@ -37,15 +42,17 @@ service cloud.firestore {
                     request.resource.data.driverId == null &&
                     request.resource.data.status == 'REQUESTED';
 
-      // Read: Customer who owns it, assigned driver, or available drivers querying open bookings
+      // Read: Admin, Customer who owns it, assigned driver, or available drivers querying open bookings
       allow read: if isAuthenticated() && (
+        isAdmin() ||
         resource.data.customerId == request.auth.uid ||
         resource.data.driverId == request.auth.uid ||
         resource.data.status in ['REQUESTED', 'SEARCHING_DRIVER']
       );
 
-      // Update: Customer can update (e.g. cancel) or driver can accept / update progress / cancel
+      // Update: Customer can update (e.g. cancel) or driver can accept / update progress / cancel, or Admin
       allow update: if isAuthenticated() && (
+        isAdmin() ||
         // Customer cancelling/updating their own booking (cannot set COMPLETED or change driver)
         (resource.data.customerId == request.auth.uid && 
          request.resource.data.customerId == resource.data.customerId &&
@@ -77,6 +84,7 @@ service cloud.firestore {
     match /driver_locations/{bookingId} {
       // Read: ONLY the assigned driver or assigned customer
       allow read: if isAuthenticated() && (
+        isAdmin() ||
         resource.data.driverId == request.auth.uid ||
         resource.data.customerId == request.auth.uid
       );
