@@ -14,6 +14,7 @@ interface BookingRepository {
     fun observePendingBookings(): Flow<Resource<List<Booking>>>
     suspend fun acceptBooking(bookingId: String, driverId: String): Resource<Unit>
     fun observeActiveDriverBooking(driverId: String): Flow<Resource<Booking?>>
+    fun observeDriverBookings(driverId: String): Flow<Resource<List<Booking>>>
     suspend fun updateBookingStatus(bookingId: String, driverId: String, newStatus: BookingStatus): Resource<Unit>
     suspend fun completeBooking(
         bookingId: String,

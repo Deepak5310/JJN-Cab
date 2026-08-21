@@ -10,6 +10,7 @@ enum class DriverTab {
     DASHBOARD,
     REQUESTS,
     ACTIVE_RIDE,
+    HISTORY,
     PROFILE
 }
 

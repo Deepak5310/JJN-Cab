@@ -96,6 +96,16 @@ class BookingRepositoryImpl @Inject constructor(
             .flowOn(dispatchers.io)
     }
 
+    override fun observeDriverBookings(driverId: String): Flow<Resource<List<Booking>>> {
+        return remoteDataSource.observeDriverBookings(driverId)
+            .map { dtoList ->
+                val domainList = dtoList.map { it.toDomain() }
+                Resource.Success(domainList) as Resource<List<Booking>>
+            }
+            .catch { emit(Resource.Error(it.localizedMessage ?: "Failed to observe driver bookings", it)) }
+            .flowOn(dispatchers.io)
+    }
+
     override suspend fun updateBookingStatus(
         bookingId: String,
         driverId: String,

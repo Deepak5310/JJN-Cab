@@ -151,6 +151,22 @@ fun DriverAppShell(
                 )
 
                 NavigationBarItem(
+                    selected = uiState.selectedTab == DriverTab.HISTORY,
+                    onClick = { viewModel.onEvent(DriverUiEvent.SelectTab(DriverTab.HISTORY)) },
+                    icon = { Text(text = "💰") },
+                    label = {
+                        Text(
+                            text = "Earnings",
+                            fontWeight = if (uiState.selectedTab == DriverTab.HISTORY) FontWeight.Bold else FontWeight.Normal
+                        )
+                    },
+                    colors = NavigationBarItemDefaults.colors(
+                        indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                        selectedTextColor = MaterialTheme.colorScheme.primary
+                    )
+                )
+
+                NavigationBarItem(
                     selected = uiState.selectedTab == DriverTab.PROFILE,
                     onClick = { viewModel.onEvent(DriverUiEvent.SelectTab(DriverTab.PROFILE)) },
                     icon = { Text(text = "👤") },
@@ -222,6 +238,9 @@ fun DriverAppShell(
                         },
                         onClearError = { viewModel.onEvent(DriverUiEvent.ClearRideStatusError) }
                     )
+                }
+                DriverTab.HISTORY -> {
+                    com.deecode.myapp.feature.driver.history.DriverHistoryScreen()
                 }
                 DriverTab.PROFILE -> {
                     DriverProfileScreen(
