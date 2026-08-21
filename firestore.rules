@@ -1,0 +1,43 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Role check helper (Assumes custom claims for server-verified admin)
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.role == 'ADMIN';
+    }
+
+    // User Profile Security Rules
+    match /users/{userId} {
+      // Users can only read their own profile; Admins can read all profiles
+      allow read: if isOwner(userId) || isAdmin();
+
+      // Account Creation: A user can only create their own document with CUSTOMER or DRIVER role.
+      // ADMIN role cannot be self-assigned.
+      allow create: if isOwner(userId)
+                    && request.resource.data.uid == userId
+                    && request.resource.data.role in ['CUSTOMER', 'DRIVER']
+                    && request.resource.data.keys().hasAll(['uid', 'name', 'email', 'role', 'createdAt', 'updatedAt']);
+
+      // Profile Update: Users can update permitted fields (name, phone, updatedAt).
+      // Users CANNOT change their role, uid, or createdAt timestamp.
+      allow update: if isOwner(userId)
+                    && request.resource.data.uid == resource.data.uid
+                    && request.resource.data.role == resource.data.role
+                    && request.resource.data.createdAt == resource.data.createdAt
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'phone', 'updatedAt']);
+
+      // Deletions are forbidden from client
+      allow delete: if isAdmin();
+    }
+  }
+}
