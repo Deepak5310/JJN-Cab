@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.deecode.myapp.core.model.UserRole
 import com.deecode.myapp.core.result.Resource
+import com.deecode.myapp.domain.model.BookingStatus
 import com.deecode.myapp.domain.repository.AuthRepository
 import com.deecode.myapp.domain.repository.BookingRepository
 import com.deecode.myapp.domain.repository.DriverRepository
@@ -29,6 +30,7 @@ class DriverViewModel @Inject constructor(
     val uiState: StateFlow<DriverUiState> = _uiState.asStateFlow()
 
     private var pendingRequestsJob: Job? = null
+    private var customerProfileJob: Job? = null
 
     init {
         observeUserProfile()
@@ -111,7 +113,28 @@ class DriverViewModel @Inject constructor(
         viewModelScope.launch {
             bookingRepository.observeActiveDriverBooking(driverId).collect { resource ->
                 if (resource is Resource.Success) {
-                    _uiState.update { it.copy(activeDriverBooking = resource.data) }
+                    val booking = resource.data
+                    _uiState.update { it.copy(activeDriverBooking = booking) }
+                    if (booking != null) {
+                        fetchCustomerName(booking.customerId)
+                    } else {
+                        customerProfileJob?.cancel()
+                        _uiState.update { it.copy(activeCustomerName = null) }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun fetchCustomerName(customerId: String) {
+        customerProfileJob?.cancel()
+        customerProfileJob = viewModelScope.launch {
+            when (val userRes = userRepository.getUserProfile(customerId)) {
+                is Resource.Success -> {
+                    _uiState.update { it.copy(activeCustomerName = userRes.data.name) }
+                }
+                else -> {
+                    _uiState.update { it.copy(activeCustomerName = "Passenger") }
                 }
             }
         }
@@ -172,6 +195,8 @@ class DriverViewModel @Inject constructor(
             is DriverUiEvent.AcceptBooking -> acceptBooking(event.bookingId)
             is DriverUiEvent.RejectBooking -> rejectBooking(event.bookingId)
             is DriverUiEvent.ClearActionMessage -> _uiState.update { it.copy(actionMessage = null) }
+            is DriverUiEvent.UpdateRideStatus -> updateRideStatus(event.bookingId, event.newStatus)
+            is DriverUiEvent.ClearRideStatusError -> _uiState.update { it.copy(rideStatusError = null) }
         }
     }
 
@@ -212,6 +237,36 @@ class DriverViewModel @Inject constructor(
                 dismissedBookingIds = it.dismissedBookingIds + bookingId,
                 actionMessage = "Ride request dismissed."
             )
+        }
+    }
+
+    private fun updateRideStatus(bookingId: String, newStatus: BookingStatus) {
+        val state = _uiState.value
+        val user = state.user ?: return
+        if (state.isUpdatingRideStatus) return
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isUpdatingRideStatus = true, rideStatusError = null) }
+
+            when (val result = bookingRepository.updateBookingStatus(bookingId, user.uid, newStatus)) {
+                is Resource.Success -> {
+                    _uiState.update {
+                        it.copy(
+                            isUpdatingRideStatus = false,
+                            rideStatusError = null
+                        )
+                    }
+                }
+                is Resource.Error -> {
+                    _uiState.update {
+                        it.copy(
+                            isUpdatingRideStatus = false,
+                            rideStatusError = result.message
+                        )
+                    }
+                }
+                is Resource.Loading -> Unit
+            }
         }
     }
 

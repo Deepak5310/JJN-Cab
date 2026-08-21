@@ -3,6 +3,7 @@ package com.deecode.myapp.feature.driver
 import com.deecode.myapp.core.base.UiEvent
 import com.deecode.myapp.core.base.UiState
 import com.deecode.myapp.domain.model.Booking
+import com.deecode.myapp.domain.model.BookingStatus
 import com.deecode.myapp.domain.model.User
 
 enum class DriverTab {
@@ -27,7 +28,10 @@ data class DriverUiState(
     val acceptingBookingId: String? = null,
     val dismissedBookingIds: Set<String> = emptySet(),
     val actionMessage: String? = null,
-    val activeDriverBooking: Booking? = null
+    val activeDriverBooking: Booking? = null,
+    val activeCustomerName: String? = null,
+    val isUpdatingRideStatus: Boolean = false,
+    val rideStatusError: String? = null
 ) : UiState
 
 sealed interface DriverUiEvent : UiEvent {
@@ -40,4 +44,6 @@ sealed interface DriverUiEvent : UiEvent {
     data class AcceptBooking(val bookingId: String) : DriverUiEvent
     data class RejectBooking(val bookingId: String) : DriverUiEvent
     data object ClearActionMessage : DriverUiEvent
+    data class UpdateRideStatus(val bookingId: String, val newStatus: BookingStatus) : DriverUiEvent
+    data object ClearRideStatusError : DriverUiEvent
 }

@@ -26,8 +26,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.deecode.myapp.domain.model.Booking
+import com.deecode.myapp.domain.model.BookingStatus
 import com.deecode.myapp.ui.components.JJNCard
 import com.deecode.myapp.ui.components.JJNOutlinedCard
+import com.deecode.myapp.ui.components.JJNPrimaryButton
 import com.deecode.myapp.ui.theme.spacing
 import java.text.NumberFormat
 import java.util.Locale
@@ -35,6 +37,11 @@ import java.util.Locale
 @Composable
 fun DriverActiveRideScreen(
     activeBooking: Booking?,
+    customerName: String?,
+    isUpdatingStatus: Boolean,
+    rideStatusError: String?,
+    onUpdateStatus: (BookingStatus) -> Unit,
+    onClearError: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
@@ -99,6 +106,22 @@ fun DriverActiveRideScreen(
             // Live Accepted Booking
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Error Banner
+            if (!rideStatusError.isNullOrBlank()) {
+                JJNCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = MaterialTheme.spacing.medium),
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer
+                ) {
+                    Text(
+                        text = rideStatusError,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+
             Box(
                 modifier = Modifier
                     .size(72.dp)
@@ -106,49 +129,81 @@ fun DriverActiveRideScreen(
                     .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = "🚘", style = MaterialTheme.typography.headlineLarge)
+                Text(
+                    text = when (activeBooking.status) {
+                        BookingStatus.ACCEPTED -> "🚘"
+                        BookingStatus.DRIVER_ARRIVING -> "📍"
+                        BookingStatus.IN_PROGRESS -> "🏎️"
+                        else -> "🏁"
+                    },
+                    style = MaterialTheme.typography.headlineLarge
+                )
             }
 
             Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
 
             Text(
-                text = "Active Assigned Ride",
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+                text = when (activeBooking.status) {
+                    BookingStatus.ACCEPTED -> "Assigned • Head to Pickup"
+                    BookingStatus.DRIVER_ARRIVING -> "Arrived at Pickup Point"
+                    BookingStatus.IN_PROGRESS -> "Trip in Progress"
+                    else -> "Ride Status: ${activeBooking.status.name}"
+                },
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
             )
 
             Text(
-                text = "Navigate to pickup point to collect rider.",
-                style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
+                text = when (activeBooking.status) {
+                    BookingStatus.ACCEPTED -> "Passenger is waiting for you at the pickup location."
+                    BookingStatus.DRIVER_ARRIVING -> "You have arrived. Verify rider and start the trip."
+                    BookingStatus.IN_PROGRESS -> "Navigating towards passenger's destination."
+                    else -> "Status: ${activeBooking.status.name}"
+                },
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             )
 
             Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
 
-            // Status Banner
+            // Customer Info Card
             JJNCard(
                 modifier = Modifier.fillMaxWidth(),
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                 contentPadding = MaterialTheme.spacing.medium
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = (customerName ?: "P").take(1).uppercase(),
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        )
+                    }
                     Spacer(modifier = Modifier.width(MaterialTheme.spacing.medium))
                     Column {
                         Text(
-                            text = "Status: ${activeBooking.status.name}",
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                            text = "Rider: ${customerName ?: "Passenger"}",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                         )
                         Text(
-                            text = "Booking ID: #${activeBooking.bookingId.takeLast(8)}",
+                            text = "Booking Ref: #${activeBooking.bookingId.takeLast(8)}",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         )
                     }
@@ -264,6 +319,51 @@ fun DriverActiveRideScreen(
                         )
                     }
                 }
+            }
+
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
+
+            // Action Transition CTA
+            when (activeBooking.status) {
+                BookingStatus.ACCEPTED -> {
+                    JJNPrimaryButton(
+                        text = if (isUpdatingStatus) "Updating..." else "Arrived at Pickup",
+                        onClick = { onUpdateStatus(BookingStatus.DRIVER_ARRIVING) },
+                        enabled = !isUpdatingStatus,
+                        isLoading = isUpdatingStatus,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                BookingStatus.DRIVER_ARRIVING -> {
+                    JJNPrimaryButton(
+                        text = if (isUpdatingStatus) "Starting..." else "Start Ride",
+                        onClick = { onUpdateStatus(BookingStatus.IN_PROGRESS) },
+                        enabled = !isUpdatingStatus,
+                        isLoading = isUpdatingStatus,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                BookingStatus.IN_PROGRESS -> {
+                    JJNCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        contentPadding = MaterialTheme.spacing.medium
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(text = "🏎️", style = MaterialTheme.typography.titleMedium)
+                            Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
+                            Text(
+                                text = "Trip in Progress • En route to destination",
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+                            )
+                        }
+                    }
+                }
+                else -> Unit
             }
         }
     }

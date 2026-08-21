@@ -49,8 +49,12 @@ service cloud.firestore {
         // Customer cancelling/updating their own booking
         (resource.data.customerId == request.auth.uid && 
          request.resource.data.customerId == resource.data.customerId) ||
-        // Assigned driver updating trip state
-        (resource.data.driverId == request.auth.uid) ||
+        // Assigned driver updating trip state with valid forward transitions
+        (resource.data.driverId == request.auth.uid &&
+         request.resource.data.driverId == resource.data.driverId &&
+         request.resource.data.customerId == resource.data.customerId &&
+         ((resource.data.status in ['ACCEPTED', 'ASSIGNED'] && request.resource.data.status in ['DRIVER_ARRIVING', 'ARRIVING']) ||
+          (resource.data.status in ['DRIVER_ARRIVING', 'ARRIVING'] && request.resource.data.status in ['IN_PROGRESS', 'STARTED']))) ||
         // Unassigned driver claiming the booking
         (resource.data.driverId == null && 
          resource.data.status in ['REQUESTED', 'SEARCHING_DRIVER'] &&

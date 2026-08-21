@@ -5,6 +5,7 @@ import com.deecode.myapp.core.result.Resource
 import com.deecode.myapp.data.datasource.remote.BookingRemoteDataSource
 import com.deecode.myapp.data.model.BookingDto
 import com.deecode.myapp.domain.model.Booking
+import com.deecode.myapp.domain.model.BookingStatus
 import com.deecode.myapp.domain.repository.BookingRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -93,5 +94,13 @@ class BookingRepositoryImpl @Inject constructor(
             }
             .catch { emit(Resource.Error(it.localizedMessage ?: "Failed to observe active driver booking", it)) }
             .flowOn(dispatchers.io)
+    }
+
+    override suspend fun updateBookingStatus(
+        bookingId: String,
+        driverId: String,
+        newStatus: BookingStatus
+    ): Resource<Unit> = withContext(dispatchers.io) {
+        remoteDataSource.updateBookingStatus(bookingId, driverId, newStatus.name)
     }
 }

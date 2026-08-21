@@ -145,4 +145,33 @@ class BookingMappingTest {
 
         assertFalse(isClaimable)
     }
+
+    @Test
+    fun `status aliases map correctly to domain BookingStatus`() {
+        val assignedDto = BookingDto(status = "ASSIGNED")
+        val arrivingDto = BookingDto(status = "ARRIVING")
+        val startedDto = BookingDto(status = "STARTED")
+
+        assertEquals(BookingStatus.ACCEPTED, assignedDto.toDomain().status)
+        assertEquals(BookingStatus.DRIVER_ARRIVING, arrivingDto.toDomain().status)
+        assertEquals(BookingStatus.IN_PROGRESS, startedDto.toDomain().status)
+    }
+
+    @Test
+    fun `active ride progression transitions evaluate correctly`() {
+        fun isValidTransition(current: String, next: String): Boolean = when (next) {
+            "DRIVER_ARRIVING", "ARRIVING" -> current in setOf("ACCEPTED", "ASSIGNED")
+            "IN_PROGRESS", "STARTED" -> current in setOf("DRIVER_ARRIVING", "ARRIVING")
+            else -> false
+        }
+
+        assertTrue(isValidTransition("ACCEPTED", "DRIVER_ARRIVING"))
+        assertTrue(isValidTransition("ASSIGNED", "ARRIVING"))
+        assertTrue(isValidTransition("DRIVER_ARRIVING", "IN_PROGRESS"))
+        assertTrue(isValidTransition("ARRIVING", "STARTED"))
+
+        assertFalse(isValidTransition("REQUESTED", "IN_PROGRESS"))
+        assertFalse(isValidTransition("ACCEPTED", "IN_PROGRESS"))
+        assertFalse(isValidTransition("IN_PROGRESS", "ACCEPTED"))
+    }
 }

@@ -2,6 +2,7 @@ package com.deecode.myapp.domain.repository
 
 import com.deecode.myapp.core.result.Resource
 import com.deecode.myapp.domain.model.Booking
+import com.deecode.myapp.domain.model.BookingStatus
 import kotlinx.coroutines.flow.Flow
 
 interface BookingRepository {
@@ -13,4 +14,5 @@ interface BookingRepository {
     fun observePendingBookings(): Flow<Resource<List<Booking>>>
     suspend fun acceptBooking(bookingId: String, driverId: String): Resource<Unit>
     fun observeActiveDriverBooking(driverId: String): Flow<Resource<Booking?>>
+    suspend fun updateBookingStatus(bookingId: String, driverId: String, newStatus: BookingStatus): Resource<Unit>
 }

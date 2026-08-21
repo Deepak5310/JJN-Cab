@@ -52,7 +52,12 @@ data class BookingDto(
         estimatedDurationSeconds = estimatedDurationSeconds,
         estimatedFare = estimatedFare,
         status = try {
-            BookingStatus.valueOf(status)
+            when (status) {
+                "ASSIGNED" -> BookingStatus.ACCEPTED
+                "ARRIVING" -> BookingStatus.DRIVER_ARRIVING
+                "STARTED" -> BookingStatus.IN_PROGRESS
+                else -> BookingStatus.valueOf(status)
+            }
         } catch (e: Exception) {
             BookingStatus.REQUESTED
         },

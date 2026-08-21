@@ -162,4 +162,57 @@ class DefaultBookingRemoteDataSource @Inject constructor(
 
         awaitClose { listener.remove() }
     }
+
+    override suspend fun updateBookingStatus(
+        bookingId: String,
+        driverId: String,
+        newStatus: String
+    ): Resource<Unit> {
+        val currentUid = auth.currentUser?.uid
+            ?: return Resource.Error("Driver must be authenticated.")
+
+        if (currentUid != driverId) {
+            return Resource.Error("Unauthorized driver status update.")
+        }
+
+        return try {
+            val docRef = bookingsCollection.document(bookingId)
+            firestore.runTransaction { transaction ->
+                val snapshot = transaction.get(docRef)
+                if (!snapshot.exists()) {
+                    throw IllegalStateException("Booking not found.")
+                }
+
+                val currentDriver = snapshot.getString("driverId")
+                val currentStatus = snapshot.getString("status")
+
+                if (currentDriver != driverId) {
+                    throw IllegalStateException("You are not the assigned driver for this ride.")
+                }
+
+                val isValidTransition = when (newStatus) {
+                    "DRIVER_ARRIVING", "ARRIVING" ->
+                        currentStatus == "ACCEPTED" || currentStatus == "ASSIGNED"
+                    "IN_PROGRESS", "STARTED" ->
+                        currentStatus == "DRIVER_ARRIVING" || currentStatus == "ARRIVING"
+                    else -> false
+                }
+
+                if (!isValidTransition) {
+                    throw IllegalStateException("Invalid status transition from $currentStatus to $newStatus.")
+                }
+
+                transaction.update(
+                    docRef,
+                    mapOf(
+                        "status" to newStatus,
+                        "updatedAt" to FieldValue.serverTimestamp()
+                    )
+                )
+            }.await()
+            Resource.Success(Unit)
+        } catch (e: Exception) {
+            Resource.Error(e.localizedMessage ?: "Failed to update ride status", e)
+        }
+    }
 }

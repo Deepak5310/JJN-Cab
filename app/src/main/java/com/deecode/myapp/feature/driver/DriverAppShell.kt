@@ -200,7 +200,18 @@ fun DriverAppShell(
                     )
                 }
                 DriverTab.ACTIVE_RIDE -> {
-                    DriverActiveRideScreen(activeBooking = uiState.activeDriverBooking)
+                    DriverActiveRideScreen(
+                        activeBooking = uiState.activeDriverBooking,
+                        customerName = uiState.activeCustomerName,
+                        isUpdatingStatus = uiState.isUpdatingRideStatus,
+                        rideStatusError = uiState.rideStatusError,
+                        onUpdateStatus = { newStatus ->
+                            uiState.activeDriverBooking?.let { booking ->
+                                viewModel.onEvent(DriverUiEvent.UpdateRideStatus(booking.bookingId, newStatus))
+                            }
+                        },
+                        onClearError = { viewModel.onEvent(DriverUiEvent.ClearRideStatusError) }
+                    )
                 }
                 DriverTab.PROFILE -> {
                     DriverProfileScreen(
