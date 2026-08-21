@@ -1,7 +1,7 @@
 package com.deecode.myapp.core.di
 
 import android.content.Context
-import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.FirebaseAuth
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -19,5 +19,11 @@ object FirebaseModule {
         @ApplicationContext context: Context
     ): FirebaseApp? {
         return FirebaseApp.initializeApp(context) ?: FirebaseApp.getApps(context).firstOrNull()
+    }
+
+    @Provides
+    @Singleton
+    fun provideFirebaseAuth(): FirebaseAuth {
+        return FirebaseAuth.getInstance()
     }
 }
