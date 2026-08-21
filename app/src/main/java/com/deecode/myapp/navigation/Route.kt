@@ -27,10 +27,17 @@ sealed interface Route {
     @Serializable
     data object RegisterRoute : Route
 
-    // Mode Destinations
+    // Customer Destinations
     @Serializable
     data object CustomerHomeRoute : Route
 
+    @Serializable
+    data object CustomerBookingsRoute : Route
+
+    @Serializable
+    data object CustomerProfileRoute : Route
+
+    // Driver & Admin Destinations
     @Serializable
     data object DriverHomeRoute : Route
 

@@ -3,7 +3,7 @@ package com.deecode.myapp.navigation
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
-import com.deecode.myapp.feature.customer.CustomerPlaceholderScreen
+import com.deecode.myapp.feature.customer.CustomerAppShell
 
 fun NavGraphBuilder.customerNavGraph(
     onLogout: () -> Unit
@@ -12,7 +12,7 @@ fun NavGraphBuilder.customerNavGraph(
         startDestination = Route.CustomerHomeRoute
     ) {
         composable<Route.CustomerHomeRoute> {
-            CustomerPlaceholderScreen(onLogout = onLogout)
+            CustomerAppShell(onLogout = onLogout)
         }
     }
 }
