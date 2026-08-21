@@ -57,7 +57,12 @@ service cloud.firestore {
 
       // Update: Customer can update (e.g. cancel) or driver can accept / update progress / cancel, or Admin
       allow update: if isAuthenticated() && (
-        isAdmin() ||
+        // Admin updating / cancelling active booking while preserving customer, driver, and fare integrity
+        (isAdmin() &&
+         request.resource.data.customerId == resource.data.customerId &&
+         request.resource.data.driverId == resource.data.driverId &&
+         request.resource.data.estimatedFare == resource.data.estimatedFare &&
+         resource.data.status != 'COMPLETED') ||
         // Customer cancelling/updating their own booking (cannot set COMPLETED or change driver)
         (resource.data.customerId == request.auth.uid && 
          request.resource.data.customerId == resource.data.customerId &&

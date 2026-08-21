@@ -8,9 +8,11 @@ import com.deecode.myapp.data.model.DriverDto
 import com.deecode.myapp.data.model.UserDto
 import com.deecode.myapp.domain.model.AdminDashboardStats
 import com.deecode.myapp.domain.model.Booking
+import com.deecode.myapp.domain.model.BookingStatus
 import com.deecode.myapp.domain.model.DriverManagementItem
 import com.deecode.myapp.domain.model.User
 import com.deecode.myapp.domain.repository.AdminRepository
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -134,6 +136,22 @@ class AdminRepositoryImpl @Inject constructor(
         emit(Resource.Error(it.localizedMessage ?: "Failed to observe recent bookings", it))
     }.flowOn(dispatchers.io)
 
+    override fun observeAllBookings(): Flow<Resource<List<Booking>>> = callbackFlow {
+        val listener = bookingsCollection.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                close(error)
+                return@addSnapshotListener
+            }
+            val dtos = snapshot?.toObjects(BookingDto::class.java) ?: emptyList()
+            val domainList = dtos.map { it.toDomain() }
+                .sortedByDescending { it.createdAt }
+            trySend(Resource.Success(domainList) as Resource<List<Booking>>)
+        }
+        awaitClose { listener.remove() }
+    }.catch {
+        emit(Resource.Error(it.localizedMessage ?: "Failed to observe fleet bookings", it))
+    }.flowOn(dispatchers.io)
+
     override fun observeUsers(): Flow<Resource<List<User>>> = callbackFlow {
         val listener = usersCollection.addSnapshotListener { snapshot, error ->
             if (error != null) {
@@ -194,6 +212,45 @@ class AdminRepositoryImpl @Inject constructor(
         }.catch {
             emit(Resource.Error(it.localizedMessage ?: "Failed to observe driver management list", it))
         }.flowOn(dispatchers.io)
+    }
+
+    override suspend fun cancelBookingAsAdmin(
+        bookingId: String,
+        reason: String,
+        adminUid: String
+    ): Resource<Unit> = withContext(dispatchers.io) {
+        try {
+            firestore.runTransaction { transaction ->
+                val bookingRef = bookingsCollection.document(bookingId)
+                val snapshot = transaction.get(bookingRef)
+
+                if (!snapshot.exists()) {
+                    throw IllegalStateException("Booking not found.")
+                }
+
+                val currentStatus = snapshot.getString("status") ?: ""
+                if (currentStatus == "COMPLETED") {
+                    throw IllegalStateException("Cannot cancel a completed ride.")
+                }
+
+                if (currentStatus in listOf("CANCELLED", "CANCELLED_BY_CUSTOMER", "CANCELLED_BY_DRIVER")) {
+                    throw IllegalStateException("Booking is already cancelled.")
+                }
+
+                val cancellationUpdates = mapOf(
+                    "status" to BookingStatus.CANCELLED.name,
+                    "cancelledBy" to adminUid,
+                    "cancellationReason" to "Admin: $reason",
+                    "cancelledAt" to FieldValue.serverTimestamp(),
+                    "updatedAt" to FieldValue.serverTimestamp()
+                )
+
+                transaction.update(bookingRef, cancellationUpdates)
+            }.await()
+            Resource.Success(Unit)
+        } catch (e: Exception) {
+            Resource.Error(e.localizedMessage ?: "Failed to cancel booking as Admin", e)
+        }
     }
 
     override suspend fun setUserActiveStatus(

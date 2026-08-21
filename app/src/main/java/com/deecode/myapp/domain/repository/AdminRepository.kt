@@ -19,4 +19,7 @@ interface AdminRepository {
     fun observeDriverManagementList(): Flow<Resource<List<DriverManagementItem>>>
     suspend fun setDriverActiveStatus(driverId: String, isActive: Boolean, adminUid: String): Resource<Unit>
     suspend fun setDriverApprovalStatus(driverId: String, isApproved: Boolean, adminUid: String): Resource<Unit>
+
+    fun observeAllBookings(): Flow<Resource<List<Booking>>>
+    suspend fun cancelBookingAsAdmin(bookingId: String, reason: String, adminUid: String): Resource<Unit>
 }
