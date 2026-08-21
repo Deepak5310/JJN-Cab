@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import com.deecode.myapp.domain.model.ThemeMode
 
 private val DarkColorScheme = darkColorScheme(
     primary = TaxiGoldPrimary,
@@ -65,7 +66,12 @@ private val LightColorScheme = lightColorScheme(
 
 @Composable
 fun JJNCabTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    themeMode: ThemeMode = ThemeMode.SYSTEM,
+    darkTheme: Boolean = when (themeMode) {
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+    },
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {

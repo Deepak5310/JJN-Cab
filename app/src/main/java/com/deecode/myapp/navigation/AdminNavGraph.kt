@@ -6,13 +6,16 @@ import androidx.navigation.navigation
 import com.deecode.myapp.feature.admin.AdminAppShell
 
 fun NavGraphBuilder.adminNavGraph(
+    onNavigateToSettings: () -> Unit = {},
     onLogout: () -> Unit
 ) {
     navigation<Route.AdminGraph>(
         startDestination = Route.AdminDashboardRoute
     ) {
         composable<Route.AdminDashboardRoute> {
-            AdminAppShell(onLogout = onLogout)
+            AdminAppShell(
+                onLogout = onLogout
+            )
         }
     }
 }

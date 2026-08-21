@@ -1,6 +1,8 @@
 package com.deecode.myapp.feature.admin.profile
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -22,6 +25,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.deecode.myapp.domain.model.User
+import com.deecode.myapp.ui.components.JJNCard
 import com.deecode.myapp.ui.components.JJNOutlinedButton
 import com.deecode.myapp.ui.components.JJNOutlinedCard
 import com.deecode.myapp.ui.theme.spacing
@@ -29,6 +33,7 @@ import com.deecode.myapp.ui.theme.spacing
 @Composable
 fun AdminProfileScreen(
     user: User?,
+    onNavigateToSettings: () -> Unit = {},
     onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -117,6 +122,39 @@ fun AdminProfileScreen(
         }
 
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
+
+        // Settings Button
+        JJNCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onNavigateToSettings),
+            contentPadding = MaterialTheme.spacing.medium
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = "⚙️", style = MaterialTheme.typography.titleMedium)
+                    Spacer(modifier = Modifier.width(MaterialTheme.spacing.medium))
+                    Text(
+                        text = "App Settings (Theme, Alerts & Info)",
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)
+                    )
+                }
+
+                Text(
+                    text = "›",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
 
         JJNOutlinedButton(
             text = "Logout",

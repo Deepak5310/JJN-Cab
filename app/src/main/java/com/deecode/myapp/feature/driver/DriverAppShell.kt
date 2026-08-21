@@ -37,6 +37,7 @@ import com.deecode.myapp.ui.theme.spacing
 @Composable
 fun DriverAppShell(
     onLogout: () -> Unit,
+    onNavigateToSettings: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: DriverViewModel = hiltViewModel()
 ) {
@@ -254,6 +255,7 @@ fun DriverAppShell(
                 DriverTab.PROFILE -> {
                     DriverProfileScreen(
                         onManageVehicle = { viewModel.onEvent(DriverUiEvent.OpenVehicleScreen) },
+                        onNavigateToSettings = onNavigateToSettings,
                         onLogout = { viewModel.signOut(onLogout) }
                     )
                 }

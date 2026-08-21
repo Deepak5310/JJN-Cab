@@ -23,6 +23,7 @@ import com.deecode.myapp.ui.components.JJNLoadingIndicator
 @Composable
 fun CustomerAppShell(
     onLogout: () -> Unit,
+    onNavigateToSettings: () -> Unit = {},
     onNavigateToActiveBooking: () -> Unit = {},
     onNavigateToRideDetails: (String) -> Unit = {},
     modifier: Modifier = Modifier,
@@ -189,6 +190,7 @@ fun CustomerAppShell(
                 }
                 CustomerTab.PROFILE -> {
                     CustomerProfileScreen(
+                        onNavigateToSettings = onNavigateToSettings,
                         onLogout = { viewModel.signOut(onLogout) }
                     )
                 }

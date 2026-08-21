@@ -10,6 +10,7 @@ import com.deecode.myapp.feature.customer.details.CustomerRideDetailsScreen
 
 fun NavGraphBuilder.customerNavGraph(
     navController: NavHostController,
+    onNavigateToSettings: () -> Unit,
     onLogout: () -> Unit
 ) {
     navigation<Route.CustomerGraph>(
@@ -17,6 +18,7 @@ fun NavGraphBuilder.customerNavGraph(
     ) {
         composable<Route.CustomerHomeRoute> {
             CustomerAppShell(
+                onNavigateToSettings = onNavigateToSettings,
                 onLogout = onLogout,
                 onNavigateToActiveBooking = {
                     navController.navigate(Route.CustomerActiveBookingRoute)

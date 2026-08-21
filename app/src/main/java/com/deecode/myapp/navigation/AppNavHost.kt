@@ -4,7 +4,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.deecode.myapp.feature.settings.SettingsScreen
 
 @Composable
 fun AppNavHost(
@@ -38,6 +40,9 @@ fun AppNavHost(
 
         customerNavGraph(
             navController = navController,
+            onNavigateToSettings = {
+                navController.navigate(Route.SettingsRoute)
+            },
             onLogout = {
                 navController.navigate(Route.AuthGraph) {
                     popUpTo(Route.CustomerGraph) { inclusive = true }
@@ -46,6 +51,9 @@ fun AppNavHost(
         )
 
         driverNavGraph(
+            onNavigateToSettings = {
+                navController.navigate(Route.SettingsRoute)
+            },
             onLogout = {
                 navController.navigate(Route.AuthGraph) {
                     popUpTo(Route.DriverGraph) { inclusive = true }
@@ -54,11 +62,27 @@ fun AppNavHost(
         )
 
         adminNavGraph(
+            onNavigateToSettings = {
+                navController.navigate(Route.SettingsRoute)
+            },
             onLogout = {
                 navController.navigate(Route.AuthGraph) {
                     popUpTo(Route.AdminGraph) { inclusive = true }
                 }
             }
         )
+
+        composable<Route.SettingsRoute> {
+            SettingsScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onLogout = {
+                    navController.navigate(Route.AuthGraph) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
+        }
     }
 }

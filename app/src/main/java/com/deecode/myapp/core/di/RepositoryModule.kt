@@ -17,6 +17,7 @@ import com.deecode.myapp.data.repository.DriverRepositoryImpl
 import com.deecode.myapp.data.repository.DriverTrackingRepositoryImpl
 import com.deecode.myapp.data.repository.NotificationRepositoryImpl
 import com.deecode.myapp.data.repository.RatingRepositoryImpl
+import com.deecode.myapp.data.repository.SettingsRepositoryImpl
 import com.deecode.myapp.data.repository.UserRepositoryImpl
 import com.deecode.myapp.data.repository.VehicleRepositoryImpl
 import com.deecode.myapp.domain.repository.AdminRepository
@@ -26,6 +27,7 @@ import com.deecode.myapp.domain.repository.DriverRepository
 import com.deecode.myapp.domain.repository.DriverTrackingRepository
 import com.deecode.myapp.domain.repository.NotificationRepository
 import com.deecode.myapp.domain.repository.RatingRepository
+import com.deecode.myapp.domain.repository.SettingsRepository
 import com.deecode.myapp.domain.repository.UserRepository
 import com.deecode.myapp.domain.repository.VehicleRepository
 import dagger.Binds
@@ -97,6 +99,12 @@ abstract class RepositoryModule {
     abstract fun bindVehicleRepository(
         vehicleRepositoryImpl: VehicleRepositoryImpl
     ): VehicleRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSettingsRepository(
+        settingsRepositoryImpl: SettingsRepositoryImpl
+    ): SettingsRepository
 
     @Binds
     @Singleton

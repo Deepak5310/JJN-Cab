@@ -6,13 +6,17 @@ import androidx.navigation.navigation
 import com.deecode.myapp.feature.driver.DriverAppShell
 
 fun NavGraphBuilder.driverNavGraph(
+    onNavigateToSettings: () -> Unit,
     onLogout: () -> Unit
 ) {
     navigation<Route.DriverGraph>(
         startDestination = Route.DriverHomeRoute
     ) {
         composable<Route.DriverHomeRoute> {
-            DriverAppShell(onLogout = onLogout)
+            DriverAppShell(
+                onNavigateToSettings = onNavigateToSettings,
+                onLogout = onLogout
+            )
         }
     }
 }

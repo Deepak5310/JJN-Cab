@@ -39,6 +39,7 @@ import java.util.Locale
 
 @Composable
 fun CustomerProfileScreen(
+    onNavigateToSettings: () -> Unit = {},
     onLogout: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CustomerProfileViewModel = hiltViewModel()
@@ -323,6 +324,39 @@ fun CustomerProfileScreen(
         }
 
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
+
+        // Settings Button
+        JJNCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onNavigateToSettings),
+            contentPadding = MaterialTheme.spacing.medium
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = "⚙️", style = MaterialTheme.typography.titleMedium)
+                    Spacer(modifier = Modifier.width(MaterialTheme.spacing.medium))
+                    Text(
+                        text = "App Settings (Theme, Alerts & Info)",
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)
+                    )
+                }
+
+                Text(
+                    text = "›",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
 
         // Sign Out Button
         JJNOutlinedButton(

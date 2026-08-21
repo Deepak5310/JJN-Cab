@@ -37,6 +37,7 @@ import com.deecode.myapp.ui.theme.spacing
 @Composable
 fun AdminAppShell(
     onLogout: () -> Unit,
+    onNavigateToSettings: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: AdminViewModel = hiltViewModel()
 ) {
@@ -206,6 +207,7 @@ fun AdminAppShell(
                 AdminTab.PROFILE -> {
                     AdminProfileScreen(
                         user = uiState.user,
+                        onNavigateToSettings = onNavigateToSettings,
                         onLogout = { viewModel.signOut(onLogout) }
                     )
                 }

@@ -71,4 +71,8 @@ sealed interface Route {
 
     @Serializable
     data object AdminProfileRoute : Route
+
+    // Shared Settings Destination
+    @Serializable
+    data object SettingsRoute : Route
 }
