@@ -9,7 +9,9 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 
-class BookingRepositoryImpl(
+import javax.inject.Inject
+
+class BookingRepositoryImpl @Inject constructor(
     private val remoteDataSource: BookingRemoteDataSource,
     private val dispatchers: DispatcherProvider
 ) : BookingRepository {
