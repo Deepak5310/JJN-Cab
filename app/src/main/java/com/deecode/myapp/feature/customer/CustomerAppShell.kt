@@ -189,7 +189,6 @@ fun CustomerAppShell(
                 }
                 CustomerTab.PROFILE -> {
                     CustomerProfileScreen(
-                        user = uiState.user,
                         onLogout = { viewModel.signOut(onLogout) }
                     )
                 }
