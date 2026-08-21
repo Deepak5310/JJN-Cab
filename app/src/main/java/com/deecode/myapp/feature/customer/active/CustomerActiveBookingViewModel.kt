@@ -11,6 +11,7 @@ import com.deecode.myapp.domain.repository.BookingRepository
 import com.deecode.myapp.domain.repository.DriverTrackingRepository
 import com.deecode.myapp.domain.repository.LocationRepository
 import com.deecode.myapp.domain.repository.RatingRepository
+import com.deecode.myapp.domain.repository.VehicleRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,13 +27,15 @@ class CustomerActiveBookingViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val locationRepository: LocationRepository,
     private val driverTrackingRepository: DriverTrackingRepository,
-    private val ratingRepository: RatingRepository
+    private val ratingRepository: RatingRepository,
+    private val vehicleRepository: VehicleRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CustomerActiveBookingUiState())
     val uiState: StateFlow<CustomerActiveBookingUiState> = _uiState.asStateFlow()
 
     private var driverTrackingJob: Job? = null
+    private var driverVehicleJob: Job? = null
 
     init {
         _uiState.update { it.copy(hasLocationPermission = locationRepository.hasLocationPermission()) }
@@ -66,6 +69,7 @@ class CustomerActiveBookingViewModel @Inject constructor(
                             )
                         }
                         syncDriverTracking(booking)
+                        syncDriverVehicle(booking?.driverId)
                     }
                     is Resource.Error -> {
                         _uiState.update {
@@ -77,6 +81,25 @@ class CustomerActiveBookingViewModel @Inject constructor(
                     }
                     is Resource.Loading -> {
                         _uiState.update { it.copy(isLoading = true) }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun syncDriverVehicle(driverId: String?) {
+        if (driverId.isNullOrBlank()) {
+            driverVehicleJob?.cancel()
+            driverVehicleJob = null
+            _uiState.update { it.copy(driverVehicle = null) }
+            return
+        }
+
+        if (driverVehicleJob == null || driverVehicleJob?.isActive != true) {
+            driverVehicleJob = viewModelScope.launch {
+                vehicleRepository.observeDriverVehicle(driverId).collect { resource ->
+                    if (resource is Resource.Success) {
+                        _uiState.update { it.copy(driverVehicle = resource.data) }
                     }
                 }
             }
@@ -195,5 +218,6 @@ class CustomerActiveBookingViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
         driverTrackingJob?.cancel()
+        driverVehicleJob?.cancel()
     }
 }

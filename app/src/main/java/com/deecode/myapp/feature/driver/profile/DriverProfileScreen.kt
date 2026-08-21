@@ -24,14 +24,18 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.deecode.myapp.domain.model.User
+import com.deecode.myapp.domain.model.Vehicle
 import com.deecode.myapp.ui.components.JJNCard
 import com.deecode.myapp.ui.components.JJNOutlinedButton
 import com.deecode.myapp.ui.components.JJNOutlinedCard
+import com.deecode.myapp.ui.components.JJNPrimaryButton
 import com.deecode.myapp.ui.theme.spacing
 
 @Composable
 fun DriverProfileScreen(
     user: User?,
+    vehicle: Vehicle? = null,
+    onManageVehicle: () -> Unit = {},
     onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -144,26 +148,70 @@ fun DriverProfileScreen(
             modifier = Modifier.fillMaxWidth(),
             contentPadding = MaterialTheme.spacing.medium
         ) {
-            Text(
-                text = "Assigned Vehicle",
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
-            )
-            Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Text(text = "Cab Model", style = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
-                    Text(text = "Maruti Suzuki Dzire", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
-                }
-
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(text = "Plate Number", style = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
-                    Text(text = "DL 01 AB 1234", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
+                Text(
+                    text = "Assigned Vehicle 🚗",
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                )
+                if (vehicle != null) {
+                    Box(
+                        modifier = Modifier
+                            .clip(MaterialTheme.shapes.small)
+                            .background(MaterialTheme.colorScheme.primaryContainer)
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = vehicle.vehicleType,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        )
+                    }
                 }
             }
+
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
+
+            if (vehicle != null) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        Text(text = "Make & Model", style = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
+                        Text(text = vehicle.makeModel, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
+                    }
+
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(text = "Plate Number", style = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
+                        Text(text = vehicle.formattedPlate, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
+                    }
+                }
+
+                if (vehicle.color.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
+                    Text(text = "Color", style = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
+                    Text(text = vehicle.color, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium))
+                }
+            } else {
+                Text(
+                    text = "No vehicle details registered yet.",
+                    style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+
+            JJNOutlinedButton(
+                text = if (vehicle != null) "Edit Vehicle Details ✏️" else "Add Vehicle Details ➕",
+                onClick = onManageVehicle,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
 
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))

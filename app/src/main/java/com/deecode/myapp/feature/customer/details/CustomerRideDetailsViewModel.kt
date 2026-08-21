@@ -8,6 +8,7 @@ import com.deecode.myapp.core.result.Resource
 import com.deecode.myapp.domain.repository.AuthRepository
 import com.deecode.myapp.domain.repository.BookingRepository
 import com.deecode.myapp.domain.repository.UserRepository
+import com.deecode.myapp.domain.repository.VehicleRepository
 import com.deecode.myapp.navigation.Route
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -23,7 +24,8 @@ class CustomerRideDetailsViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val authRepository: AuthRepository,
     private val bookingRepository: BookingRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val vehicleRepository: VehicleRepository
 ) : ViewModel() {
 
     private val bookingId: String = try {
@@ -36,6 +38,7 @@ class CustomerRideDetailsViewModel @Inject constructor(
     val uiState: StateFlow<CustomerRideDetailsUiState> = _uiState.asStateFlow()
 
     private var detailsJob: Job? = null
+    private var vehicleJob: Job? = null
 
     init {
         observeRideDetails()
@@ -87,6 +90,7 @@ class CustomerRideDetailsViewModel @Inject constructor(
                             }
                             if (!booking.driverId.isNullOrBlank()) {
                                 fetchDriverName(booking.driverId)
+                                fetchDriverVehicle(booking.driverId)
                             }
                         }
                     }
@@ -119,10 +123,28 @@ class CustomerRideDetailsViewModel @Inject constructor(
         }
     }
 
+    private fun fetchDriverVehicle(driverId: String) {
+        vehicleJob?.cancel()
+        vehicleJob = viewModelScope.launch {
+            when (val res = vehicleRepository.getDriverVehicle(driverId)) {
+                is Resource.Success -> {
+                    _uiState.update { it.copy(driverVehicle = res.data) }
+                }
+                else -> Unit
+            }
+        }
+    }
+
     fun onEvent(event: CustomerRideDetailsUiEvent) {
         when (event) {
             is CustomerRideDetailsUiEvent.Retry -> observeRideDetails()
             is CustomerRideDetailsUiEvent.ClearError -> _uiState.update { it.copy(errorMessage = null) }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        detailsJob?.cancel()
+        vehicleJob?.cancel()
     }
 }

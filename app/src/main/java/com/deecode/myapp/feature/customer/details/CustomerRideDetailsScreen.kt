@@ -324,11 +324,20 @@ fun CustomerRideDetailsScreen(
                                 )
                             }
                             Spacer(modifier = Modifier.width(MaterialTheme.spacing.medium))
-                            Column {
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = "Driver: ${uiState.driverName ?: "Assigned Driver"}",
                                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
                                 )
+                                uiState.driverVehicle?.let { vehicle ->
+                                    Text(
+                                        text = "${vehicle.makeModel} • ${vehicle.formattedPlate} (${vehicle.color})",
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            color = MaterialTheme.colorScheme.primary,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    )
+                                }
                                 Text(
                                     text = "Driver ID: #${booking.driverId.takeLast(8)}",
                                     style = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)

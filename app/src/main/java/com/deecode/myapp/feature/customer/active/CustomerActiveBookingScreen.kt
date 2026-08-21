@@ -322,6 +322,49 @@ fun CustomerActiveBookingScreen(
 
                 Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
 
+                // Assigned Driver Vehicle Details
+                uiState.driverVehicle?.let { vehicle ->
+                    JJNCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                        contentPadding = MaterialTheme.spacing.medium
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = "Assigned Cab 🚖",
+                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                                )
+                                Text(
+                                    text = "${vehicle.makeModel} (${vehicle.color})",
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
+                                )
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .clip(MaterialTheme.shapes.small)
+                                    .background(MaterialTheme.colorScheme.primaryContainer)
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Text(
+                                    text = vehicle.formattedPlate,
+                                    style = MaterialTheme.typography.titleSmall.copy(
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+                }
+
                 // 4. Trip Details Card
                 JJNOutlinedCard(
                     modifier = Modifier.fillMaxWidth(),

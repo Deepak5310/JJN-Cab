@@ -4,6 +4,7 @@ import com.deecode.myapp.core.base.UiEvent
 import com.deecode.myapp.core.base.UiState
 import com.deecode.myapp.domain.model.Booking
 import com.deecode.myapp.domain.model.LocationPoint
+import com.deecode.myapp.domain.model.Vehicle
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -12,6 +13,7 @@ import java.util.Locale
 data class CustomerActiveBookingUiState(
     val isLoading: Boolean = true,
     val booking: Booking? = null,
+    val driverVehicle: Vehicle? = null,
     val driverLocation: LocationPoint? = null,
     val hasLocationPermission: Boolean = false,
     val isCancelling: Boolean = false,

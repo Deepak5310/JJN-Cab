@@ -29,6 +29,7 @@ import com.deecode.myapp.feature.driver.activeride.DriverActiveRideScreen
 import com.deecode.myapp.feature.driver.dashboard.DriverDashboardScreen
 import com.deecode.myapp.feature.driver.profile.DriverProfileScreen
 import com.deecode.myapp.feature.driver.requests.DriverRequestsScreen
+import com.deecode.myapp.feature.driver.vehicle.DriverVehicleScreen
 import com.deecode.myapp.ui.components.JJNLoadingIndicator
 import com.deecode.myapp.ui.components.JJNOutlinedButton
 import com.deecode.myapp.ui.theme.spacing
@@ -92,6 +93,14 @@ fun DriverAppShell(
                 modifier = Modifier.fillMaxWidth()
             )
         }
+        return
+    }
+
+    if (uiState.isVehicleScreenVisible) {
+        DriverVehicleScreen(
+            onNavigateBack = { viewModel.onEvent(DriverUiEvent.CloseVehicleScreen) },
+            modifier = modifier
+        )
         return
     }
 
@@ -245,6 +254,8 @@ fun DriverAppShell(
                 DriverTab.PROFILE -> {
                     DriverProfileScreen(
                         user = uiState.user,
+                        vehicle = uiState.vehicle,
+                        onManageVehicle = { viewModel.onEvent(DriverUiEvent.OpenVehicleScreen) },
                         onLogout = { viewModel.signOut(onLogout) }
                     )
                 }

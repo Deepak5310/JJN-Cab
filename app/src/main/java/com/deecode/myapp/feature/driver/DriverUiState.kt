@@ -5,6 +5,7 @@ import com.deecode.myapp.core.base.UiState
 import com.deecode.myapp.domain.model.Booking
 import com.deecode.myapp.domain.model.BookingStatus
 import com.deecode.myapp.domain.model.User
+import com.deecode.myapp.domain.model.Vehicle
 
 enum class DriverTab {
     DASHBOARD,
@@ -16,7 +17,9 @@ enum class DriverTab {
 
 data class DriverUiState(
     val user: User? = null,
+    val vehicle: Vehicle? = null,
     val selectedTab: DriverTab = DriverTab.DASHBOARD,
+    val isVehicleScreenVisible: Boolean = false,
     val isLoading: Boolean = true,
     val isUnauthorized: Boolean = false,
     val errorMessage: String? = null,
@@ -56,4 +59,6 @@ sealed interface DriverUiEvent : UiEvent {
     data object OpenRatingSheet : DriverUiEvent
     data object CloseRatingSheet : DriverUiEvent
     data class SubmitCustomerRating(val rating: Int, val review: String?) : DriverUiEvent
+    data object OpenVehicleScreen : DriverUiEvent
+    data object CloseVehicleScreen : DriverUiEvent
 }

@@ -39,6 +39,18 @@ service cloud.firestore {
       allow write: if isDriver(driverId) || isAdmin();
     }
 
+    // Vehicles collection
+    match /vehicles/{driverId} {
+      // Read: authenticated users (customers matching rides, drivers, admins)
+      allow read: if isAuthenticated();
+      // Write: Driver can ONLY create/update their own vehicle details
+      allow write: if isAuthenticated() &&
+                    request.auth.uid == driverId &&
+                    request.resource.data.driverId == driverId &&
+                    request.resource.data.makeModel is string &&
+                    request.resource.data.registrationNumber is string;
+    }
+
     // Bookings collection
     match /bookings/{bookingId} {
       // Creation: customer can ONLY create booking if customerId matches their auth.uid, driverId is null, and status is REQUESTED

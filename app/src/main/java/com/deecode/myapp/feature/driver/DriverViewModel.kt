@@ -14,6 +14,7 @@ import com.deecode.myapp.domain.repository.LocationRepository
 import com.deecode.myapp.domain.repository.NotificationRepository
 import com.deecode.myapp.domain.repository.RatingRepository
 import com.deecode.myapp.domain.repository.UserRepository
+import com.deecode.myapp.domain.repository.VehicleRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,7 +33,8 @@ class DriverViewModel @Inject constructor(
     private val locationRepository: LocationRepository,
     private val driverTrackingRepository: DriverTrackingRepository,
     private val notificationRepository: NotificationRepository,
-    private val ratingRepository: RatingRepository
+    private val ratingRepository: RatingRepository,
+    private val vehicleRepository: VehicleRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DriverUiState())
@@ -41,6 +43,7 @@ class DriverViewModel @Inject constructor(
     private var pendingRequestsJob: Job? = null
     private var customerProfileJob: Job? = null
     private var locationTrackingJob: Job? = null
+    private var vehicleJob: Job? = null
 
     init {
         observeUserProfile()
@@ -76,6 +79,7 @@ class DriverViewModel @Inject constructor(
                         if (isAuthorized) {
                             observeDriverAvailability(user.uid)
                             observeActiveDriverBooking(user.uid)
+                            observeDriverVehicle(user.uid)
                             notificationRepository.syncFcmToken(user.uid)
                         }
                     }
@@ -90,6 +94,17 @@ class DriverViewModel @Inject constructor(
                     is Resource.Loading -> {
                         _uiState.update { it.copy(isLoading = true) }
                     }
+                }
+            }
+        }
+    }
+
+    private fun observeDriverVehicle(driverId: String) {
+        vehicleJob?.cancel()
+        vehicleJob = viewModelScope.launch {
+            vehicleRepository.observeDriverVehicle(driverId).collect { resource ->
+                if (resource is Resource.Success) {
+                    _uiState.update { it.copy(vehicle = resource.data) }
                 }
             }
         }
@@ -246,6 +261,8 @@ class DriverViewModel @Inject constructor(
             is DriverUiEvent.OpenRatingSheet -> _uiState.update { it.copy(isRatingSheetVisible = true, ratingError = null) }
             is DriverUiEvent.CloseRatingSheet -> _uiState.update { it.copy(isRatingSheetVisible = false, ratingError = null) }
             is DriverUiEvent.SubmitCustomerRating -> submitCustomerRating(event.rating, event.review)
+            is DriverUiEvent.OpenVehicleScreen -> _uiState.update { it.copy(isVehicleScreenVisible = true) }
+            is DriverUiEvent.CloseVehicleScreen -> _uiState.update { it.copy(isVehicleScreenVisible = false) }
         }
     }
 

@@ -3,6 +3,7 @@ package com.deecode.myapp.feature.customer.details
 import com.deecode.myapp.core.base.UiEvent
 import com.deecode.myapp.core.base.UiState
 import com.deecode.myapp.domain.model.Booking
+import com.deecode.myapp.domain.model.Vehicle
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -12,6 +13,7 @@ data class CustomerRideDetailsUiState(
     val isLoading: Boolean = true,
     val booking: Booking? = null,
     val driverName: String? = null,
+    val driverVehicle: Vehicle? = null,
     val errorMessage: String? = null
 ) : UiState {
     val formattedFare: String
