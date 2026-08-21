@@ -10,4 +10,6 @@ interface BookingRemoteDataSource {
     fun observeBooking(bookingId: String): Flow<BookingDto?>
     fun observeCustomerBookings(customerId: String): Flow<List<BookingDto>>
     fun observePendingBookings(): Flow<List<BookingDto>>
+    suspend fun acceptBooking(bookingId: String, driverId: String): Resource<Unit>
+    fun observeDriverBookings(driverId: String): Flow<List<BookingDto>>
 }

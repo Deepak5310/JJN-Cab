@@ -3,8 +3,8 @@ package com.deecode.myapp.data.datasource.remote
 import com.deecode.myapp.core.result.Resource
 import com.deecode.myapp.data.model.BookingDto
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -97,6 +97,67 @@ class DefaultBookingRemoteDataSource @Inject constructor(
                 val eligible = dtos.filter { it.driverId == null }
                     .sortedByDescending { it.createdAt?.toDate()?.time ?: 0L }
                 trySend(eligible)
+            }
+
+        awaitClose { listener.remove() }
+    }
+
+    override suspend fun acceptBooking(bookingId: String, driverId: String): Resource<Unit> {
+        val currentUid = auth.currentUser?.uid
+            ?: return Resource.Error("Driver must be authenticated.")
+
+        if (currentUid != driverId) {
+            return Resource.Error("Unauthorized driver assignment.")
+        }
+
+        return try {
+            val docRef = bookingsCollection.document(bookingId)
+            firestore.runTransaction { transaction ->
+                val snapshot = transaction.get(docRef)
+                if (!snapshot.exists()) {
+                    throw IllegalStateException("Booking not found.")
+                }
+
+                val currentDriverId = snapshot.getString("driverId")
+                val currentStatus = snapshot.getString("status")
+
+                if (currentDriverId != null || currentStatus != "REQUESTED") {
+                    throw IllegalStateException("ALREADY_TAKEN")
+                }
+
+                transaction.update(
+                    docRef,
+                    mapOf(
+                        "driverId" to driverId,
+                        "status" to "ACCEPTED",
+                        "updatedAt" to FieldValue.serverTimestamp()
+                    )
+                )
+            }.await()
+            Resource.Success(Unit)
+        } catch (e: Exception) {
+            val isAlreadyTaken = e.message?.contains("ALREADY_TAKEN") == true ||
+                    e.cause?.message?.contains("ALREADY_TAKEN") == true
+            val message = if (isAlreadyTaken) {
+                "This ride was already accepted by another driver."
+            } else {
+                e.localizedMessage ?: "Failed to accept booking"
+            }
+            Resource.Error(message, e)
+        }
+    }
+
+    override fun observeDriverBookings(driverId: String): Flow<List<BookingDto>> = callbackFlow {
+        val listener = bookingsCollection
+            .whereEqualTo("driverId", driverId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                val dtos = snapshot?.toObjects(BookingDto::class.java) ?: emptyList()
+                val sorted = dtos.sortedByDescending { it.updatedAt?.toDate()?.time ?: it.createdAt?.toDate()?.time ?: 0L }
+                trySend(sorted)
             }
 
         awaitClose { listener.remove() }

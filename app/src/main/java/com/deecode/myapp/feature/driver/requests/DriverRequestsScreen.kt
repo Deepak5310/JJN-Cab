@@ -29,6 +29,7 @@ import com.deecode.myapp.domain.model.Booking
 import com.deecode.myapp.ui.components.JJNCard
 import com.deecode.myapp.ui.components.JJNOutlinedButton
 import com.deecode.myapp.ui.components.JJNOutlinedCard
+import com.deecode.myapp.ui.components.JJNPrimaryButton
 import com.deecode.myapp.ui.theme.spacing
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
@@ -39,14 +40,22 @@ import java.util.Locale
 fun DriverRequestsScreen(
     isOnline: Boolean,
     pendingBookings: List<Booking>,
+    dismissedBookingIds: Set<String>,
+    acceptingBookingId: String?,
+    actionMessage: String?,
     isLoading: Boolean,
     errorMessage: String?,
+    onAcceptBooking: (String) -> Unit,
+    onRejectBooking: (String) -> Unit,
+    onClearActionMessage: () -> Unit,
     onRefresh: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val currencyFormat = NumberFormat.getCurrencyInstance(Locale("en", "IN")).apply {
         maximumFractionDigits = 0
     }
+
+    val visibleBookings = pendingBookings.filter { it.bookingId !in dismissedBookingIds }
 
     Column(
         modifier = modifier
@@ -84,7 +93,7 @@ fun DriverRequestsScreen(
                         .padding(horizontal = 10.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = "${pendingBookings.size} Available",
+                        text = "${visibleBookings.size} Available",
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -95,6 +104,36 @@ fun DriverRequestsScreen(
         }
 
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+
+        // Action / Notice Message Banner
+        if (!actionMessage.isNullOrBlank()) {
+            JJNCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = MaterialTheme.spacing.medium),
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = actionMessage,
+                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = "✕",
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .padding(4.dp)
+                    )
+                }
+            }
+        }
 
         if (!isOnline) {
             // Offline Screen
@@ -152,7 +191,7 @@ fun DriverRequestsScreen(
             }
         }
 
-        if (isLoading && pendingBookings.isEmpty()) {
+        if (isLoading && visibleBookings.isEmpty()) {
             // Loading State
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -164,7 +203,7 @@ fun DriverRequestsScreen(
                     color = MaterialTheme.colorScheme.primary
                 )
             }
-        } else if (pendingBookings.isEmpty()) {
+        } else if (visibleBookings.isEmpty()) {
             // Empty State
             Spacer(modifier = Modifier.height(60.dp))
             Column(
@@ -203,12 +242,16 @@ fun DriverRequestsScreen(
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
             ) {
                 items(
-                    items = pendingBookings,
+                    items = visibleBookings,
                     key = { it.bookingId }
                 ) { booking ->
                     BookingRequestCard(
                         booking = booking,
-                        currencyFormat = currencyFormat
+                        currencyFormat = currencyFormat,
+                        isAccepting = acceptingBookingId == booking.bookingId,
+                        isAnyActionInProgress = acceptingBookingId != null,
+                        onAccept = { onAcceptBooking(booking.bookingId) },
+                        onReject = { onRejectBooking(booking.bookingId) }
                     )
                 }
             }
@@ -220,6 +263,10 @@ fun DriverRequestsScreen(
 private fun BookingRequestCard(
     booking: Booking,
     currencyFormat: NumberFormat,
+    isAccepting: Boolean,
+    isAnyActionInProgress: Boolean,
+    onAccept: () -> Unit,
+    onReject: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val timeFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
@@ -335,6 +382,29 @@ private fun BookingRequestCard(
             Text(
                 text = "Ref: #${booking.bookingId.takeLast(6)}",
                 style = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+
+        // Action Buttons Row
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
+        ) {
+            JJNOutlinedButton(
+                text = "Reject",
+                onClick = onReject,
+                enabled = !isAnyActionInProgress,
+                modifier = Modifier.weight(1f)
+            )
+
+            JJNPrimaryButton(
+                text = if (isAccepting) "Accepting..." else "Accept Ride",
+                onClick = onAccept,
+                enabled = !isAnyActionInProgress,
+                isLoading = isAccepting,
+                modifier = Modifier.weight(1.5f)
             )
         }
     }

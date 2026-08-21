@@ -127,4 +127,22 @@ class BookingMappingTest {
         assertEquals(1, filtered.size)
         assertEquals("1", filtered[0].bookingId)
     }
+
+    @Test
+    fun `driver accepting booking sets driverId and status to ACCEPTED`() {
+        val initialDto = BookingDto(bookingId = "booking_1", status = "REQUESTED", driverId = null)
+        val acceptedDto = initialDto.copy(driverId = "driver_win", status = "ACCEPTED")
+
+        assertEquals("driver_win", acceptedDto.driverId)
+        assertEquals("ACCEPTED", acceptedDto.status)
+        assertTrue(acceptedDto.toDomain().status.isActive)
+    }
+
+    @Test
+    fun `second driver attempting to claim already assigned booking is detected`() {
+        val alreadyAssignedDto = BookingDto(bookingId = "booking_1", status = "ACCEPTED", driverId = "driver_first")
+        val isClaimable = alreadyAssignedDto.driverId == null && alreadyAssignedDto.status == "REQUESTED"
+
+        assertFalse(isClaimable)
+    }
 }

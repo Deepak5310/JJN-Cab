@@ -188,13 +188,19 @@ fun DriverAppShell(
                     DriverRequestsScreen(
                         isOnline = uiState.isOnline,
                         pendingBookings = uiState.pendingBookings,
+                        dismissedBookingIds = uiState.dismissedBookingIds,
+                        acceptingBookingId = uiState.acceptingBookingId,
+                        actionMessage = uiState.actionMessage,
                         isLoading = uiState.isLoadingRequests,
                         errorMessage = uiState.requestsError,
+                        onAcceptBooking = { bookingId -> viewModel.onEvent(DriverUiEvent.AcceptBooking(bookingId)) },
+                        onRejectBooking = { bookingId -> viewModel.onEvent(DriverUiEvent.RejectBooking(bookingId)) },
+                        onClearActionMessage = { viewModel.onEvent(DriverUiEvent.ClearActionMessage) },
                         onRefresh = { viewModel.onEvent(DriverUiEvent.RefreshRequests) }
                     )
                 }
                 DriverTab.ACTIVE_RIDE -> {
-                    DriverActiveRideScreen()
+                    DriverActiveRideScreen(activeBooking = uiState.activeDriverBooking)
                 }
                 DriverTab.PROFILE -> {
                     DriverProfileScreen(

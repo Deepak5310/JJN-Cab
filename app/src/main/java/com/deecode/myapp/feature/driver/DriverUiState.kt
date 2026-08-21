@@ -23,7 +23,11 @@ data class DriverUiState(
     val availabilityError: String? = null,
     val pendingBookings: List<Booking> = emptyList(),
     val isLoadingRequests: Boolean = false,
-    val requestsError: String? = null
+    val requestsError: String? = null,
+    val acceptingBookingId: String? = null,
+    val dismissedBookingIds: Set<String> = emptySet(),
+    val actionMessage: String? = null,
+    val activeDriverBooking: Booking? = null
 ) : UiState
 
 sealed interface DriverUiEvent : UiEvent {
@@ -33,4 +37,7 @@ sealed interface DriverUiEvent : UiEvent {
     data object ClearError : DriverUiEvent
     data object ClearAvailabilityError : DriverUiEvent
     data object RefreshRequests : DriverUiEvent
+    data class AcceptBooking(val bookingId: String) : DriverUiEvent
+    data class RejectBooking(val bookingId: String) : DriverUiEvent
+    data object ClearActionMessage : DriverUiEvent
 }

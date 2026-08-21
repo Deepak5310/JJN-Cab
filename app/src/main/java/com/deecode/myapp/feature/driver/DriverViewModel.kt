@@ -63,6 +63,7 @@ class DriverViewModel @Inject constructor(
                         }
                         if (isAuthorized) {
                             observeDriverAvailability(user.uid)
+                            observeActiveDriverBooking(user.uid)
                         }
                     }
                     is Resource.Error -> {
@@ -101,6 +102,16 @@ class DriverViewModel @Inject constructor(
                         }
                     }
                     is Resource.Loading -> Unit
+                }
+            }
+        }
+    }
+
+    private fun observeActiveDriverBooking(driverId: String) {
+        viewModelScope.launch {
+            bookingRepository.observeActiveDriverBooking(driverId).collect { resource ->
+                if (resource is Resource.Success) {
+                    _uiState.update { it.copy(activeDriverBooking = resource.data) }
                 }
             }
         }
@@ -158,6 +169,49 @@ class DriverViewModel @Inject constructor(
             is DriverUiEvent.ClearError -> _uiState.update { it.copy(errorMessage = null) }
             is DriverUiEvent.ClearAvailabilityError -> _uiState.update { it.copy(availabilityError = null) }
             is DriverUiEvent.RefreshRequests -> syncRequestsStream(_uiState.value.isOnline)
+            is DriverUiEvent.AcceptBooking -> acceptBooking(event.bookingId)
+            is DriverUiEvent.RejectBooking -> rejectBooking(event.bookingId)
+            is DriverUiEvent.ClearActionMessage -> _uiState.update { it.copy(actionMessage = null) }
+        }
+    }
+
+    private fun acceptBooking(bookingId: String) {
+        val state = _uiState.value
+        val user = state.user ?: return
+        if (state.acceptingBookingId != null || !state.isOnline) return
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(acceptingBookingId = bookingId, actionMessage = null) }
+
+            when (val result = bookingRepository.acceptBooking(bookingId, user.uid)) {
+                is Resource.Success -> {
+                    _uiState.update {
+                        it.copy(
+                            acceptingBookingId = null,
+                            actionMessage = "Ride accepted! Switched to Active Ride.",
+                            selectedTab = DriverTab.ACTIVE_RIDE
+                        )
+                    }
+                }
+                is Resource.Error -> {
+                    _uiState.update {
+                        it.copy(
+                            acceptingBookingId = null,
+                            actionMessage = result.message
+                        )
+                    }
+                }
+                is Resource.Loading -> Unit
+            }
+        }
+    }
+
+    private fun rejectBooking(bookingId: String) {
+        _uiState.update {
+            it.copy(
+                dismissedBookingIds = it.dismissedBookingIds + bookingId,
+                actionMessage = "Ride request dismissed."
+            )
         }
     }
 

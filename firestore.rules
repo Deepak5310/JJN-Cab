@@ -52,7 +52,11 @@ service cloud.firestore {
         // Assigned driver updating trip state
         (resource.data.driverId == request.auth.uid) ||
         // Unassigned driver claiming the booking
-        (resource.data.driverId == null && request.resource.data.driverId == request.auth.uid)
+        (resource.data.driverId == null && 
+         resource.data.status in ['REQUESTED', 'SEARCHING_DRIVER'] &&
+         request.resource.data.driverId == request.auth.uid &&
+         request.resource.data.status == 'ACCEPTED' &&
+         request.resource.data.customerId == resource.data.customerId)
       );
 
       // Soft deletes / cancellations only
