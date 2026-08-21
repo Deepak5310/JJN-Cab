@@ -8,6 +8,7 @@ import com.deecode.myapp.data.model.DriverDto
 import com.deecode.myapp.data.model.UserDto
 import com.deecode.myapp.domain.model.AdminDashboardStats
 import com.deecode.myapp.domain.model.Booking
+import com.deecode.myapp.domain.model.DriverManagementItem
 import com.deecode.myapp.domain.model.User
 import com.deecode.myapp.domain.repository.AdminRepository
 import com.google.firebase.firestore.FirebaseFirestore
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
+import java.util.Calendar
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -148,6 +150,52 @@ class AdminRepositoryImpl @Inject constructor(
         emit(Resource.Error(it.localizedMessage ?: "Failed to observe users", it))
     }.flowOn(dispatchers.io)
 
+    override fun observeDriverManagementList(): Flow<Resource<List<DriverManagementItem>>> {
+        return combine(
+            observeRawUsers(),
+            observeRawDrivers(),
+            observeRawBookings()
+        ) { rawUsers, rawDrivers, rawBookings ->
+            val startOfToday = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }.timeInMillis
+
+            val driverUsers = rawUsers.filter { it.role.equals("DRIVER", ignoreCase = true) }
+            val onlineMap = rawDrivers.associate { it.driverId to it.isOnline }
+
+            val items = driverUsers.map { userDto ->
+                val user = userDto.toDomain()
+                val driverBookings = rawBookings.filter { it.driverId == user.uid }
+
+                val completed = driverBookings.filter { it.status == "COMPLETED" }
+                val cancelled = driverBookings.filter {
+                    it.status in listOf("CANCELLED", "CANCELLED_BY_CUSTOMER", "CANCELLED_BY_DRIVER")
+                }
+
+                val totalEarnings = completed.sumOf { it.finalFare ?: it.estimatedFare }
+                val todayEarnings = completed.filter { (it.createdAt?.toDate()?.time ?: 0L) >= startOfToday }
+                    .sumOf { it.finalFare ?: it.estimatedFare }
+
+                DriverManagementItem(
+                    driverId = user.uid,
+                    user = user,
+                    isOnline = onlineMap[user.uid] ?: false,
+                    completedTrips = completed.size,
+                    cancelledTrips = cancelled.size,
+                    todayEarnings = todayEarnings,
+                    totalEarnings = totalEarnings
+                )
+            }.sortedByDescending { it.user.createdAt ?: 0L }
+
+            Resource.Success(items) as Resource<List<DriverManagementItem>>
+        }.catch {
+            emit(Resource.Error(it.localizedMessage ?: "Failed to observe driver management list", it))
+        }.flowOn(dispatchers.io)
+    }
+
     override suspend fun setUserActiveStatus(
         targetUid: String,
         isActive: Boolean,
@@ -162,6 +210,12 @@ class AdminRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun setDriverActiveStatus(
+        driverId: String,
+        isActive: Boolean,
+        adminUid: String
+    ): Resource<Unit> = setUserActiveStatus(driverId, isActive, adminUid)
+
     override suspend fun setDriverVerification(
         targetUid: String,
         isVerified: Boolean,
@@ -175,6 +229,12 @@ class AdminRepositoryImpl @Inject constructor(
             Resource.Error(e.localizedMessage ?: "Failed to update driver verification", e)
         }
     }
+
+    override suspend fun setDriverApprovalStatus(
+        driverId: String,
+        isApproved: Boolean,
+        adminUid: String
+    ): Resource<Unit> = setDriverVerification(driverId, isApproved, adminUid)
 
     override suspend fun setUserRole(
         targetUid: String,
