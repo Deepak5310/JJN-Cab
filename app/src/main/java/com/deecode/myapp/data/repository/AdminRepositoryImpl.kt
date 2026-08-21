@@ -43,8 +43,12 @@ class AdminRepositoryImpl @Inject constructor(
                 close(error)
                 return@addSnapshotListener
             }
-            val list = snapshot?.toObjects(UserDto::class.java) ?: emptyList()
-            trySend(list)
+            try {
+                val list = snapshot?.toObjects(UserDto::class.java) ?: emptyList()
+                trySend(list)
+            } catch (e: Exception) {
+                trySend(emptyList())
+            }
         }
         awaitClose { listener.remove() }
     }
@@ -55,8 +59,12 @@ class AdminRepositoryImpl @Inject constructor(
                 close(error)
                 return@addSnapshotListener
             }
-            val list = snapshot?.toObjects(DriverDto::class.java) ?: emptyList()
-            trySend(list)
+            try {
+                val list = snapshot?.toObjects(DriverDto::class.java) ?: emptyList()
+                trySend(list)
+            } catch (e: Exception) {
+                trySend(emptyList())
+            }
         }
         awaitClose { listener.remove() }
     }
@@ -67,8 +75,12 @@ class AdminRepositoryImpl @Inject constructor(
                 close(error)
                 return@addSnapshotListener
             }
-            val list = snapshot?.toObjects(BookingDto::class.java) ?: emptyList()
-            trySend(list)
+            try {
+                val list = snapshot?.toObjects(BookingDto::class.java) ?: emptyList()
+                trySend(list)
+            } catch (e: Exception) {
+                trySend(emptyList())
+            }
         }
         awaitClose { listener.remove() }
     }
@@ -120,49 +132,61 @@ class AdminRepositoryImpl @Inject constructor(
         }.flowOn(dispatchers.io)
     }
 
-    override fun observeRecentBookings(limit: Int): Flow<Resource<List<Booking>>> = callbackFlow {
+    override fun observeRecentBookings(limit: Int): Flow<Resource<List<Booking>>> = callbackFlow<Resource<List<Booking>>> {
         val listener = bookingsCollection.addSnapshotListener { snapshot, error ->
             if (error != null) {
                 close(error)
                 return@addSnapshotListener
             }
-            val dtos = snapshot?.toObjects(BookingDto::class.java) ?: emptyList()
-            val domainList = dtos.map { it.toDomain() }
-                .sortedByDescending { it.createdAt }
-                .take(limit)
-            trySend(Resource.Success(domainList) as Resource<List<Booking>>)
+            try {
+                val dtos = snapshot?.toObjects(BookingDto::class.java) ?: emptyList()
+                val domainList = dtos.map { it.toDomain() }
+                    .sortedByDescending { it.createdAt }
+                    .take(limit)
+                trySend(Resource.Success(domainList))
+            } catch (e: Exception) {
+                trySend(Resource.Success(emptyList()))
+            }
         }
         awaitClose { listener.remove() }
     }.catch {
         emit(Resource.Error(it.localizedMessage ?: "Failed to observe recent bookings", it))
     }.flowOn(dispatchers.io)
 
-    override fun observeAllBookings(): Flow<Resource<List<Booking>>> = callbackFlow {
+    override fun observeAllBookings(): Flow<Resource<List<Booking>>> = callbackFlow<Resource<List<Booking>>> {
         val listener = bookingsCollection.addSnapshotListener { snapshot, error ->
             if (error != null) {
                 close(error)
                 return@addSnapshotListener
             }
-            val dtos = snapshot?.toObjects(BookingDto::class.java) ?: emptyList()
-            val domainList = dtos.map { it.toDomain() }
-                .sortedByDescending { it.createdAt }
-            trySend(Resource.Success(domainList) as Resource<List<Booking>>)
+            try {
+                val dtos = snapshot?.toObjects(BookingDto::class.java) ?: emptyList()
+                val domainList = dtos.map { it.toDomain() }
+                    .sortedByDescending { it.createdAt }
+                trySend(Resource.Success(domainList))
+            } catch (e: Exception) {
+                trySend(Resource.Success(emptyList()))
+            }
         }
         awaitClose { listener.remove() }
     }.catch {
         emit(Resource.Error(it.localizedMessage ?: "Failed to observe fleet bookings", it))
     }.flowOn(dispatchers.io)
 
-    override fun observeUsers(): Flow<Resource<List<User>>> = callbackFlow {
+    override fun observeUsers(): Flow<Resource<List<User>>> = callbackFlow<Resource<List<User>>> {
         val listener = usersCollection.addSnapshotListener { snapshot, error ->
             if (error != null) {
                 close(error)
                 return@addSnapshotListener
             }
-            val dtos = snapshot?.toObjects(UserDto::class.java) ?: emptyList()
-            val domainUsers = dtos.map { it.toDomain() }
-                .sortedByDescending { it.createdAt ?: 0L }
-            trySend(Resource.Success(domainUsers) as Resource<List<User>>)
+            try {
+                val dtos = snapshot?.toObjects(UserDto::class.java) ?: emptyList()
+                val domainUsers = dtos.map { it.toDomain() }
+                    .sortedByDescending { it.createdAt ?: 0L }
+                trySend(Resource.Success(domainUsers))
+            } catch (e: Exception) {
+                trySend(Resource.Success(emptyList()))
+            }
         }
         awaitClose { listener.remove() }
     }.catch {

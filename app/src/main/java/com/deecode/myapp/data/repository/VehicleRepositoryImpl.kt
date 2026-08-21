@@ -32,12 +32,16 @@ class VehicleRepositoryImpl @Inject constructor(
                 return@addSnapshotListener
             }
 
-            val vehicle = if (snapshot != null && snapshot.exists()) {
-                snapshot.toObject(VehicleDto::class.java)?.toDomain()
-            } else {
-                null
+            try {
+                val vehicle = if (snapshot != null && snapshot.exists()) {
+                    snapshot.toObject(VehicleDto::class.java)?.toDomain()
+                } else {
+                    null
+                }
+                trySend(Resource.Success(vehicle) as Resource<Vehicle?>)
+            } catch (e: Exception) {
+                trySend(Resource.Success(null) as Resource<Vehicle?>)
             }
-            trySend(Resource.Success(vehicle) as Resource<Vehicle?>)
         }
         awaitClose { listener.remove() }
     }.catch {

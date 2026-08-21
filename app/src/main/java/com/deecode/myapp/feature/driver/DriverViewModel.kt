@@ -44,6 +44,8 @@ class DriverViewModel @Inject constructor(
     private var customerProfileJob: Job? = null
     private var locationTrackingJob: Job? = null
     private var vehicleJob: Job? = null
+    private var availabilityJob: Job? = null
+    private var activeBookingJob: Job? = null
 
     init {
         observeUserProfile()
@@ -111,7 +113,8 @@ class DriverViewModel @Inject constructor(
     }
 
     private fun observeDriverAvailability(driverId: String) {
-        viewModelScope.launch {
+        availabilityJob?.cancel()
+        availabilityJob = viewModelScope.launch {
             driverRepository.observeAvailability(driverId).collect { resource ->
                 when (resource) {
                     is Resource.Success -> {
@@ -136,7 +139,8 @@ class DriverViewModel @Inject constructor(
     }
 
     private fun observeActiveDriverBooking(driverId: String) {
-        viewModelScope.launch {
+        activeBookingJob?.cancel()
+        activeBookingJob = viewModelScope.launch {
             bookingRepository.observeActiveDriverBooking(driverId).collect { resource ->
                 if (resource is Resource.Success) {
                     val booking = resource.data

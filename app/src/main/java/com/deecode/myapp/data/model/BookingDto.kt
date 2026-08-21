@@ -5,12 +5,13 @@ import com.deecode.myapp.domain.model.BookingStatus
 import com.deecode.myapp.domain.model.LocationPoint
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentId
+import com.google.firebase.firestore.PropertyName
 import com.google.firebase.firestore.ServerTimestamp
 
 data class LocationPointDto(
-    val latitude: Double = 0.0,
-    val longitude: Double = 0.0,
-    val address: String? = null
+    @get:PropertyName("latitude") @set:PropertyName("latitude") var latitude: Double = 0.0,
+    @get:PropertyName("longitude") @set:PropertyName("longitude") var longitude: Double = 0.0,
+    @get:PropertyName("address") @set:PropertyName("address") var address: String? = null
 ) {
     fun toDomain(): LocationPoint = LocationPoint(
         latitude = latitude,
@@ -29,32 +30,32 @@ data class LocationPointDto(
 
 data class BookingDto(
     @DocumentId
-    val bookingId: String = "",
-    val customerId: String = "",
-    val pickup: LocationPointDto = LocationPointDto(),
-    val destination: LocationPointDto = LocationPointDto(),
-    val distanceMeters: Int = 0,
-    val estimatedDurationSeconds: Long = 0L,
-    val estimatedFare: Double = 0.0,
-    val status: String = BookingStatus.REQUESTED.name,
-    val driverId: String? = null,
+    @get:PropertyName("bookingId") @set:PropertyName("bookingId") var bookingId: String = "",
+    @get:PropertyName("customerId") @set:PropertyName("customerId") var customerId: String = "",
+    @get:PropertyName("pickup") @set:PropertyName("pickup") var pickup: LocationPointDto = LocationPointDto(),
+    @get:PropertyName("destination") @set:PropertyName("destination") var destination: LocationPointDto = LocationPointDto(),
+    @get:PropertyName("distanceMeters") @set:PropertyName("distanceMeters") var distanceMeters: Int = 0,
+    @get:PropertyName("estimatedDurationSeconds") @set:PropertyName("estimatedDurationSeconds") var estimatedDurationSeconds: Long = 0L,
+    @get:PropertyName("estimatedFare") @set:PropertyName("estimatedFare") var estimatedFare: Double = 0.0,
+    @get:PropertyName("status") @set:PropertyName("status") var status: String = BookingStatus.REQUESTED.name,
+    @get:PropertyName("driverId") @set:PropertyName("driverId") var driverId: String? = null,
     @ServerTimestamp
-    val createdAt: Timestamp? = null,
+    @get:PropertyName("createdAt") @set:PropertyName("createdAt") var createdAt: Timestamp? = null,
     @ServerTimestamp
-    val updatedAt: Timestamp? = null,
+    @get:PropertyName("updatedAt") @set:PropertyName("updatedAt") var updatedAt: Timestamp? = null,
     @ServerTimestamp
-    val completedAt: Timestamp? = null,
-    val finalFare: Double? = null,
-    val finalDistanceMeters: Int? = null,
-    val finalDurationSeconds: Long? = null,
+    @get:PropertyName("completedAt") @set:PropertyName("completedAt") var completedAt: Timestamp? = null,
+    @get:PropertyName("finalFare") @set:PropertyName("finalFare") var finalFare: Double? = null,
+    @get:PropertyName("finalDistanceMeters") @set:PropertyName("finalDistanceMeters") var finalDistanceMeters: Int? = null,
+    @get:PropertyName("finalDurationSeconds") @set:PropertyName("finalDurationSeconds") var finalDurationSeconds: Long? = null,
     @ServerTimestamp
-    val cancelledAt: Timestamp? = null,
-    val cancelledBy: String? = null,
-    val cancellationReason: String? = null,
-    val customerRating: Int? = null,
-    val customerReview: String? = null,
-    val driverRating: Int? = null,
-    val driverReview: String? = null
+    @get:PropertyName("cancelledAt") @set:PropertyName("cancelledAt") var cancelledAt: Timestamp? = null,
+    @get:PropertyName("cancelledBy") @set:PropertyName("cancelledBy") var cancelledBy: String? = null,
+    @get:PropertyName("cancellationReason") @set:PropertyName("cancellationReason") var cancellationReason: String? = null,
+    @get:PropertyName("customerRating") @set:PropertyName("customerRating") var customerRating: Int? = null,
+    @get:PropertyName("customerReview") @set:PropertyName("customerReview") var customerReview: String? = null,
+    @get:PropertyName("driverRating") @set:PropertyName("driverRating") var driverRating: Int? = null,
+    @get:PropertyName("driverReview") @set:PropertyName("driverReview") var driverReview: String? = null
 ) {
     fun toDomain(): Booking = Booking(
         bookingId = bookingId,
@@ -72,7 +73,7 @@ data class BookingDto(
                 "CANCELLED" -> BookingStatus.CANCELLED
                 else -> BookingStatus.valueOf(status)
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             BookingStatus.REQUESTED
         },
         driverId = driverId,

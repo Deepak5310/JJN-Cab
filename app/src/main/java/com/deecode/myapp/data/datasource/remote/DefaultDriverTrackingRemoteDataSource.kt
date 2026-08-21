@@ -43,8 +43,12 @@ class DefaultDriverTrackingRemoteDataSource @Inject constructor(
                     close(error)
                     return@addSnapshotListener
                 }
-                val dto = snapshot?.toObject(DriverLocationDto::class.java)
-                trySend(dto)
+                try {
+                    val dto = snapshot?.toObject(DriverLocationDto::class.java)
+                    trySend(dto)
+                } catch (e: Exception) {
+                    trySend(null)
+                }
             }
 
         awaitClose { listener.remove() }

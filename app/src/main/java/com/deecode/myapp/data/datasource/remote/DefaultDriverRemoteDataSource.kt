@@ -47,8 +47,16 @@ class DefaultDriverRemoteDataSource @Inject constructor(
                     close(error)
                     return@addSnapshotListener
                 }
-                val dto = snapshot?.toObject(DriverDto::class.java)
-                trySend(dto)
+                if (snapshot != null && snapshot.exists()) {
+                    val isOnline = snapshot.getBoolean("isOnline")
+                        ?: snapshot.getBoolean("online")
+                        ?: (snapshot.get("isOnline") as? Boolean)
+                        ?: false
+                    val updatedAt = snapshot.getTimestamp("updatedAt")
+                    trySend(DriverDto(driverId = snapshot.id, isOnline = isOnline, updatedAt = updatedAt))
+                } else {
+                    trySend(DriverDto(driverId = driverId, isOnline = false, updatedAt = null))
+                }
             }
 
         awaitClose { listener.remove() }
@@ -57,9 +65,13 @@ class DefaultDriverRemoteDataSource @Inject constructor(
     override suspend fun getAvailability(driverId: String): Resource<DriverDto> {
         return try {
             val doc = driversCollection.document(driverId).get().await()
-            val dto = doc.toObject(DriverDto::class.java)
-            if (dto != null) {
-                Resource.Success(dto)
+            if (doc.exists()) {
+                val isOnline = doc.getBoolean("isOnline")
+                    ?: doc.getBoolean("online")
+                    ?: (doc.get("isOnline") as? Boolean)
+                    ?: false
+                val updatedAt = doc.getTimestamp("updatedAt")
+                Resource.Success(DriverDto(driverId = doc.id, isOnline = isOnline, updatedAt = updatedAt))
             } else {
                 Resource.Success(DriverDto(driverId = driverId, isOnline = false))
             }

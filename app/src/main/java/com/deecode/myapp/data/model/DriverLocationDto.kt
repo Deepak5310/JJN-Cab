@@ -4,19 +4,20 @@ import com.deecode.myapp.domain.model.DriverLocation
 import com.deecode.myapp.domain.model.LocationPoint
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentId
+import com.google.firebase.firestore.PropertyName
 import com.google.firebase.firestore.ServerTimestamp
 
 data class DriverLocationDto(
     @DocumentId
-    val bookingId: String = "",
-    val driverId: String = "",
-    val customerId: String = "",
-    val latitude: Double = 0.0,
-    val longitude: Double = 0.0,
-    val bearing: Float = 0f,
-    val speed: Float = 0f,
+    @get:PropertyName("bookingId") @set:PropertyName("bookingId") var bookingId: String = "",
+    @get:PropertyName("driverId") @set:PropertyName("driverId") var driverId: String = "",
+    @get:PropertyName("customerId") @set:PropertyName("customerId") var customerId: String = "",
+    @get:PropertyName("latitude") @set:PropertyName("latitude") var latitude: Double = 0.0,
+    @get:PropertyName("longitude") @set:PropertyName("longitude") var longitude: Double = 0.0,
+    @get:PropertyName("bearing") @set:PropertyName("bearing") var bearing: Float = 0f,
+    @get:PropertyName("speed") @set:PropertyName("speed") var speed: Float = 0f,
     @ServerTimestamp
-    val updatedAt: Timestamp? = null
+    @get:PropertyName("updatedAt") @set:PropertyName("updatedAt") var updatedAt: Timestamp? = null
 ) {
     fun toDomain(): DriverLocation = DriverLocation(
         bookingId = bookingId,

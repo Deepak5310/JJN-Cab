@@ -68,8 +68,12 @@ class DefaultBookingRemoteDataSource @Inject constructor(
                     close(error)
                     return@addSnapshotListener
                 }
-                val dto = snapshot?.toObject(BookingDto::class.java)
-                trySend(dto)
+                try {
+                    val dto = snapshot?.toObject(BookingDto::class.java)
+                    trySend(dto)
+                } catch (e: Exception) {
+                    trySend(null)
+                }
             }
 
         awaitClose { listener.remove() }
@@ -83,9 +87,13 @@ class DefaultBookingRemoteDataSource @Inject constructor(
                     close(error)
                     return@addSnapshotListener
                 }
-                val dtos = snapshot?.toObjects(BookingDto::class.java) ?: emptyList()
-                val sorted = dtos.sortedByDescending { it.createdAt?.toDate()?.time ?: 0L }
-                trySend(sorted)
+                try {
+                    val dtos = snapshot?.toObjects(BookingDto::class.java) ?: emptyList()
+                    val sorted = dtos.sortedByDescending { it.createdAt?.toDate()?.time ?: 0L }
+                    trySend(sorted)
+                } catch (e: Exception) {
+                    trySend(emptyList())
+                }
             }
 
         awaitClose { listener.remove() }
@@ -99,10 +107,14 @@ class DefaultBookingRemoteDataSource @Inject constructor(
                     close(error)
                     return@addSnapshotListener
                 }
-                val dtos = snapshot?.toObjects(BookingDto::class.java) ?: emptyList()
-                val eligible = dtos.filter { it.driverId == null }
-                    .sortedByDescending { it.createdAt?.toDate()?.time ?: 0L }
-                trySend(eligible)
+                try {
+                    val dtos = snapshot?.toObjects(BookingDto::class.java) ?: emptyList()
+                    val eligible = dtos.filter { it.driverId == null }
+                        .sortedByDescending { it.createdAt?.toDate()?.time ?: 0L }
+                    trySend(eligible)
+                } catch (e: Exception) {
+                    trySend(emptyList())
+                }
             }
 
         awaitClose { listener.remove() }
@@ -161,9 +173,13 @@ class DefaultBookingRemoteDataSource @Inject constructor(
                     close(error)
                     return@addSnapshotListener
                 }
-                val dtos = snapshot?.toObjects(BookingDto::class.java) ?: emptyList()
-                val sorted = dtos.sortedByDescending { it.updatedAt?.toDate()?.time ?: it.createdAt?.toDate()?.time ?: 0L }
-                trySend(sorted)
+                try {
+                    val dtos = snapshot?.toObjects(BookingDto::class.java) ?: emptyList()
+                    val sorted = dtos.sortedByDescending { it.updatedAt?.toDate()?.time ?: it.createdAt?.toDate()?.time ?: 0L }
+                    trySend(sorted)
+                } catch (e: Exception) {
+                    trySend(emptyList())
+                }
             }
 
         awaitClose { listener.remove() }
