@@ -23,10 +23,11 @@ service cloud.firestore {
 
     // Bookings collection
     match /bookings/{bookingId} {
-      // Creation: customer can ONLY create booking if customerId matches their auth.uid
+      // Creation: customer can ONLY create booking if customerId matches their auth.uid, driverId is null, and status is REQUESTED
       allow create: if isAuthenticated() && 
                     request.resource.data.customerId == request.auth.uid &&
-                    request.resource.data.status in ['REQUESTED', 'SEARCHING_DRIVER'];
+                    request.resource.data.driverId == null &&
+                    request.resource.data.status == 'REQUESTED';
 
       // Read: Customer who owns it, assigned driver, or available drivers querying open bookings
       allow read: if isAuthenticated() && (

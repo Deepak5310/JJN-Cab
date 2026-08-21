@@ -4,9 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.deecode.myapp.core.result.Resource
 import com.deecode.myapp.domain.calculator.FareCalculator
+import com.deecode.myapp.domain.model.Booking
+import com.deecode.myapp.domain.model.BookingStatus
 import com.deecode.myapp.domain.model.LocationPoint
 import com.deecode.myapp.domain.model.PlaceSuggestion
 import com.deecode.myapp.domain.repository.AuthRepository
+import com.deecode.myapp.domain.repository.BookingRepository
 import com.deecode.myapp.domain.repository.LocationRepository
 import com.deecode.myapp.domain.repository.PlacesRepository
 import com.deecode.myapp.domain.repository.RouteRepository
@@ -32,7 +35,8 @@ class CustomerViewModel @Inject constructor(
     private val locationRepository: LocationRepository,
     private val placesRepository: PlacesRepository,
     private val routeRepository: RouteRepository,
-    private val fareCalculator: FareCalculator
+    private val fareCalculator: FareCalculator,
+    private val bookingRepository: BookingRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CustomerUiState(isLoading = true))
@@ -233,6 +237,84 @@ class CustomerViewModel @Inject constructor(
             }
             is CustomerUiEvent.SelectRideTier -> {
                 _uiState.update { it.copy(selectedRideTier = event.tier) }
+            }
+            is CustomerUiEvent.OpenConfirmBooking -> {
+                _uiState.update { it.copy(isConfirmBookingSheetVisible = true, bookingCreationError = null) }
+            }
+            is CustomerUiEvent.CloseConfirmBooking -> {
+                _uiState.update { it.copy(isConfirmBookingSheetVisible = false, bookingCreationError = null) }
+            }
+            is CustomerUiEvent.SubmitBooking -> {
+                submitBooking()
+            }
+            is CustomerUiEvent.ClearCreatedBooking -> {
+                _uiState.update { it.copy(createdBooking = null) }
+            }
+            is CustomerUiEvent.ClearBookingCreationError -> {
+                _uiState.update { it.copy(bookingCreationError = null) }
+            }
+        }
+    }
+
+    private fun submitBooking() {
+        val state = _uiState.value
+        // Prevent duplicate submissions
+        if (state.isCreatingBooking) return
+
+        val authUser = authRepository.currentUser
+        val pickup = state.pickupLocation
+        val destination = state.destinationLocation
+        val route = state.routeInfo
+        val fare = state.selectedFare
+
+        if (authUser == null) {
+            _uiState.update { it.copy(bookingCreationError = "You must be signed in to book a ride.") }
+            return
+        }
+
+        if (pickup == null || destination == null || route == null || fare == null) {
+            _uiState.update { it.copy(bookingCreationError = "Incomplete booking details. Please ensure pickup, destination and route are selected.") }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isCreatingBooking = true, bookingCreationError = null) }
+
+            val newBooking = Booking(
+                customerId = authUser.uid,
+                pickup = pickup,
+                destination = destination,
+                distanceMeters = route.distanceMeters,
+                estimatedDurationSeconds = route.durationSeconds,
+                estimatedFare = fare.totalFare.toDouble(),
+                status = BookingStatus.REQUESTED
+            )
+
+            when (val result = bookingRepository.createBooking(newBooking)) {
+                is Resource.Success -> {
+                    val createdBooking = newBooking.copy(bookingId = result.data)
+                    _uiState.update {
+                        it.copy(
+                            isCreatingBooking = false,
+                            isConfirmBookingSheetVisible = false,
+                            createdBooking = createdBooking,
+                            bookingCreationError = null,
+                            destinationLocation = null,
+                            routeInfo = null,
+                            fareEstimates = emptyMap()
+                        )
+                    }
+                    lastCalculatedPair = null
+                }
+                is Resource.Error -> {
+                    _uiState.update {
+                        it.copy(
+                            isCreatingBooking = false,
+                            bookingCreationError = result.message
+                        )
+                    }
+                }
+                is Resource.Loading -> Unit
             }
         }
     }

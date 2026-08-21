@@ -35,6 +35,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
+import com.deecode.myapp.domain.model.Booking
 import com.deecode.myapp.domain.model.FareBreakdown
 import com.deecode.myapp.domain.model.LocationPoint
 import com.deecode.myapp.domain.model.PlaceSuggestion
@@ -61,6 +62,10 @@ fun CustomerHomeScreen(
     routeError: String?,
     selectedRideTier: RideTier,
     fareEstimates: Map<RideTier, FareBreakdown>,
+    isConfirmBookingSheetVisible: Boolean,
+    isCreatingBooking: Boolean,
+    createdBooking: Booking?,
+    bookingCreationError: String?,
     hasLocationPermission: Boolean,
     isLocating: Boolean,
     locationError: String?,
@@ -84,6 +89,10 @@ fun CustomerHomeScreen(
     onConfirmMapSelection: (Double, Double) -> Unit,
     onCancelMapSelection: () -> Unit,
     onSelectRideTier: (RideTier) -> Unit,
+    onOpenConfirmBooking: () -> Unit,
+    onCloseConfirmBooking: () -> Unit,
+    onSubmitBooking: () -> Unit,
+    onClearCreatedBooking: () -> Unit,
     onNavigateToBookings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -91,6 +100,17 @@ fun CustomerHomeScreen(
     val scrollState = rememberScrollState()
     val displayName = user?.name?.split(" ")?.firstOrNull() ?: "Rider"
     val cameraPositionState = rememberCameraPositionState()
+    val selectedFare = fareEstimates[selectedRideTier]
+
+    // If a booking was just created, show the Active Booking screen
+    if (createdBooking != null) {
+        ActiveBookingScreen(
+            booking = createdBooking,
+            onDismiss = onClearCreatedBooking,
+            modifier = modifier
+        )
+        return
+    }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
@@ -534,7 +554,6 @@ fun CustomerHomeScreen(
         }
 
         // Fare Breakdown Card (when route is computed)
-        val selectedFare = fareEstimates[selectedRideTier]
         if (selectedFare != null) {
             Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
             JJNOutlinedCard(
@@ -631,7 +650,11 @@ fun CustomerHomeScreen(
 
         JJNPrimaryButton(
             text = ctaText,
-            onClick = { /* Ready for future booking flow */ },
+            onClick = {
+                if (canRequestRide) {
+                    onOpenConfirmBooking()
+                }
+            },
             enabled = canRequestRide
         )
     }
@@ -647,6 +670,21 @@ fun CustomerHomeScreen(
             onSelectSuggestion = onSelectPlaceSuggestion,
             onSelectOnMap = { onStartMapSelection(activeLocationTarget) },
             onDismiss = onClosePlaceSearch
+        )
+    }
+
+    // Booking Confirmation Modal Bottom Sheet
+    if (isConfirmBookingSheetVisible && pickupLocation != null && destinationLocation != null && routeInfo != null && selectedFare != null) {
+        BookingConfirmationBottomSheet(
+            tier = selectedRideTier,
+            pickup = pickupLocation,
+            destination = destinationLocation,
+            routeInfo = routeInfo,
+            fare = selectedFare,
+            isCreatingBooking = isCreatingBooking,
+            errorMessage = bookingCreationError,
+            onConfirmBooking = onSubmitBooking,
+            onDismiss = onCloseConfirmBooking
         )
     }
 }

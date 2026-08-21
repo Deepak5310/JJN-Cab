@@ -107,6 +107,10 @@ fun CustomerAppShell(
                         routeError = uiState.routeError,
                         selectedRideTier = uiState.selectedRideTier,
                         fareEstimates = uiState.fareEstimates,
+                        isConfirmBookingSheetVisible = uiState.isConfirmBookingSheetVisible,
+                        isCreatingBooking = uiState.isCreatingBooking,
+                        createdBooking = uiState.createdBooking,
+                        bookingCreationError = uiState.bookingCreationError,
                         hasLocationPermission = viewModel.hasLocationPermission(),
                         isLocating = uiState.isLocating,
                         locationError = uiState.locationError,
@@ -153,6 +157,18 @@ fun CustomerAppShell(
                         },
                         onSelectRideTier = { tier ->
                             viewModel.onEvent(CustomerUiEvent.SelectRideTier(tier))
+                        },
+                        onOpenConfirmBooking = {
+                            viewModel.onEvent(CustomerUiEvent.OpenConfirmBooking)
+                        },
+                        onCloseConfirmBooking = {
+                            viewModel.onEvent(CustomerUiEvent.CloseConfirmBooking)
+                        },
+                        onSubmitBooking = {
+                            viewModel.onEvent(CustomerUiEvent.SubmitBooking)
+                        },
+                        onClearCreatedBooking = {
+                            viewModel.onEvent(CustomerUiEvent.ClearCreatedBooking)
                         },
                         onNavigateToBookings = {
                             viewModel.onEvent(CustomerUiEvent.SelectTab(CustomerTab.BOOKINGS))

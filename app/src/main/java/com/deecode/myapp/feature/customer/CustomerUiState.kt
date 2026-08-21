@@ -2,6 +2,7 @@ package com.deecode.myapp.feature.customer
 
 import com.deecode.myapp.core.base.UiEvent
 import com.deecode.myapp.core.base.UiState
+import com.deecode.myapp.domain.model.Booking
 import com.deecode.myapp.domain.model.FareBreakdown
 import com.deecode.myapp.domain.model.LocationPoint
 import com.deecode.myapp.domain.model.PlaceSuggestion
@@ -48,7 +49,13 @@ data class CustomerUiState(
 
     // Fare Estimation
     val selectedRideTier: RideTier = RideTier.MINI,
-    val fareEstimates: Map<RideTier, FareBreakdown> = emptyMap()
+    val fareEstimates: Map<RideTier, FareBreakdown> = emptyMap(),
+
+    // Booking Creation Flow
+    val isConfirmBookingSheetVisible: Boolean = false,
+    val isCreatingBooking: Boolean = false,
+    val createdBooking: Booking? = null,
+    val bookingCreationError: String? = null
 ) : UiState {
     val selectedFare: FareBreakdown?
         get() = fareEstimates[selectedRideTier]
@@ -78,4 +85,11 @@ sealed interface CustomerUiEvent : UiEvent {
 
     // Fare Selection
     data class SelectRideTier(val tier: RideTier) : CustomerUiEvent
+
+    // Booking Creation
+    data object OpenConfirmBooking : CustomerUiEvent
+    data object CloseConfirmBooking : CustomerUiEvent
+    data object SubmitBooking : CustomerUiEvent
+    data object ClearCreatedBooking : CustomerUiEvent
+    data object ClearBookingCreationError : CustomerUiEvent
 }
