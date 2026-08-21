@@ -1,6 +1,8 @@
 package com.deecode.myapp.core.di
 
 import com.deecode.myapp.data.datasource.remote.AuthRemoteDataSource
+import com.deecode.myapp.data.datasource.remote.BookingRemoteDataSource
+import com.deecode.myapp.data.datasource.remote.DefaultBookingRemoteDataSource
 import com.deecode.myapp.data.datasource.remote.FirebaseAuthRemoteDataSourceImpl
 import com.deecode.myapp.data.datasource.remote.FirestoreUserRemoteDataSourceImpl
 import com.deecode.myapp.data.datasource.remote.UserRemoteDataSource
@@ -19,6 +21,12 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
+
+    @Binds
+    @Singleton
+    abstract fun bindBookingRemoteDataSource(
+        defaultBookingRemoteDataSource: DefaultBookingRemoteDataSource
+    ): BookingRemoteDataSource
 
     @Binds
     @Singleton

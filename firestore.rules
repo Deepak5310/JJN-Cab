@@ -7,37 +7,47 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
+    function isCustomer(customerId) {
+      return isAuthenticated() && request.auth.uid == customerId;
     }
 
-    // Role check helper (Assumes custom claims for server-verified admin)
-    function isAdmin() {
-      return isAuthenticated() && request.auth.token.role == 'ADMIN';
+    function isDriver(driverId) {
+      return isAuthenticated() && request.auth.uid == driverId;
     }
 
-    // User Profile Security Rules
+    // Users collection
     match /users/{userId} {
-      // Users can only read their own profile; Admins can read all profiles
-      allow read: if isOwner(userId) || isAdmin();
+      allow read: if isAuthenticated();
+      allow write: if isCustomer(userId);
+    }
 
-      // Account Creation: A user can only create their own document with CUSTOMER or DRIVER role.
-      // ADMIN role cannot be self-assigned.
-      allow create: if isOwner(userId)
-                    && request.resource.data.uid == userId
-                    && request.resource.data.role in ['CUSTOMER', 'DRIVER']
-                    && request.resource.data.keys().hasAll(['uid', 'name', 'email', 'role', 'createdAt', 'updatedAt']);
+    // Bookings collection
+    match /bookings/{bookingId} {
+      // Creation: customer can ONLY create booking if customerId matches their auth.uid
+      allow create: if isAuthenticated() && 
+                    request.resource.data.customerId == request.auth.uid &&
+                    request.resource.data.status in ['REQUESTED', 'SEARCHING_DRIVER'];
 
-      // Profile Update: Users can update permitted fields (name, phone, updatedAt).
-      // Users CANNOT change their role, uid, or createdAt timestamp.
-      allow update: if isOwner(userId)
-                    && request.resource.data.uid == resource.data.uid
-                    && request.resource.data.role == resource.data.role
-                    && request.resource.data.createdAt == resource.data.createdAt
-                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'phone', 'updatedAt']);
+      // Read: Customer who owns it, assigned driver, or available drivers querying open bookings
+      allow read: if isAuthenticated() && (
+        resource.data.customerId == request.auth.uid ||
+        resource.data.driverId == request.auth.uid ||
+        resource.data.status in ['REQUESTED', 'SEARCHING_DRIVER']
+      );
 
-      // Deletions are forbidden from client
-      allow delete: if isAdmin();
+      // Update: Customer can update (e.g. cancel) or driver can accept / update progress
+      allow update: if isAuthenticated() && (
+        // Customer cancelling/updating their own booking
+        (resource.data.customerId == request.auth.uid && 
+         request.resource.data.customerId == resource.data.customerId) ||
+        // Assigned driver updating trip state
+        (resource.data.driverId == request.auth.uid) ||
+        // Unassigned driver claiming the booking
+        (resource.data.driverId == null && request.resource.data.driverId == request.auth.uid)
+      );
+
+      // Soft deletes / cancellations only
+      allow delete: if false;
     }
   }
 }
