@@ -27,11 +27,29 @@ service cloud.firestore {
     // Users collection
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.auth.uid == userId;
+
+      // Client creation: Never allow clients to self-assign ADMIN role
+      allow create: if isAuthenticated() &&
+                    request.auth.uid == userId &&
+                    request.resource.data.uid == userId &&
+                    request.resource.data.role in ['CUSTOMER', 'DRIVER'] &&
+                    request.resource.data.isActive == true &&
+                    request.resource.data.isDriverVerified == false;
+
+      // Update: User can edit only their own permitted fields without altering role, active status, or verified status
       allow update: if isAuthenticated() && (
-        (isCustomer(userId) && request.resource.data.role == resource.data.role && request.resource.data.uid == resource.data.uid) ||
-        (isAdmin() && request.resource.data.uid == resource.data.uid && request.resource.data.email == resource.data.email)
+        (isCustomer(userId) &&
+         request.resource.data.uid == resource.data.uid &&
+         request.resource.data.email == resource.data.email &&
+         request.resource.data.role == resource.data.role &&
+         request.resource.data.isActive == resource.data.isActive &&
+         request.resource.data.isDriverVerified == resource.data.isDriverVerified) ||
+        (isAdmin() &&
+         request.resource.data.uid == resource.data.uid &&
+         request.resource.data.email == resource.data.email &&
+         (request.resource.data.role != 'ADMIN' || resource.data.role == 'ADMIN'))
       );
+
       allow delete: if false;
     }
 
@@ -84,6 +102,7 @@ service cloud.firestore {
         (resource.data.customerId == request.auth.uid && 
          request.resource.data.customerId == resource.data.customerId &&
          request.resource.data.driverId == resource.data.driverId &&
+         request.resource.data.estimatedFare == resource.data.estimatedFare &&
          !isTerminalStatus(resource.data.status) &&
          resource.data.status in ['REQUESTED', 'SEARCHING_DRIVER', 'ACCEPTED', 'ASSIGNED', 'DRIVER_ARRIVING', 'ARRIVING'] &&
          request.resource.data.status in ['CANCELLED', 'CANCELLED_BY_CUSTOMER'] &&
@@ -92,6 +111,7 @@ service cloud.firestore {
         (resource.data.driverId == request.auth.uid &&
          request.resource.data.driverId == resource.data.driverId &&
          request.resource.data.customerId == resource.data.customerId &&
+         request.resource.data.estimatedFare == resource.data.estimatedFare &&
          !isTerminalStatus(resource.data.status) &&
          ((resource.data.status in ['ACCEPTED', 'ASSIGNED'] && request.resource.data.status in ['DRIVER_ARRIVING', 'ARRIVING']) ||
           (resource.data.status in ['DRIVER_ARRIVING', 'ARRIVING'] && request.resource.data.status in ['IN_PROGRESS', 'STARTED']) ||
@@ -103,7 +123,8 @@ service cloud.firestore {
          resource.data.status in ['REQUESTED', 'SEARCHING_DRIVER'] &&
          request.resource.data.driverId == request.auth.uid &&
          request.resource.data.status in ['ACCEPTED', 'ASSIGNED'] &&
-         request.resource.data.customerId == resource.data.customerId)
+         request.resource.data.customerId == resource.data.customerId &&
+         request.resource.data.estimatedFare == resource.data.estimatedFare)
       );
 
       // Soft deletes / cancellations only
@@ -123,6 +144,13 @@ service cloud.firestore {
       allow write: if isAuthenticated() && 
         request.resource.data.driverId == request.auth.uid &&
         (resource == null || resource.data.driverId == request.auth.uid);
+
+      // Delete: cleanup on ride completion or cancellation
+      allow delete: if isAuthenticated() && (
+        resource.data.driverId == request.auth.uid ||
+        resource.data.customerId == request.auth.uid ||
+        isAdmin()
+      );
     }
 
     // Ratings & Reviews collection
