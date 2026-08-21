@@ -12,7 +12,7 @@ fun NavGraphBuilder.customerNavGraph(
         startDestination = Route.CustomerHomeRoute
     ) {
         composable<Route.CustomerHomeRoute> {
-            CustomerPlaceholderScreen()
+            CustomerPlaceholderScreen(onLogout = onLogout)
         }
     }
 }

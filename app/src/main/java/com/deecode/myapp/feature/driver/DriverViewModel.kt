@@ -5,11 +5,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+import androidx.lifecycle.viewModelScope
+import com.deecode.myapp.domain.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class DriverViewModel @Inject constructor() : ViewModel() {
+class DriverViewModel @Inject constructor(
+    private val authRepository: AuthRepository
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DriverUiState())
     val uiState: StateFlow<DriverUiState> = _uiState.asStateFlow()
@@ -19,6 +24,13 @@ class DriverViewModel @Inject constructor() : ViewModel() {
             is DriverUiEvent.ToggleOnlineStatus -> {
                 _uiState.value = _uiState.value.copy(isOnline = event.isOnline)
             }
+        }
+    }
+
+    fun signOut(onComplete: () -> Unit) {
+        viewModelScope.launch {
+            authRepository.signOut()
+            onComplete()
         }
     }
 }

@@ -12,7 +12,7 @@ fun NavGraphBuilder.driverNavGraph(
         startDestination = Route.DriverHomeRoute
     ) {
         composable<Route.DriverHomeRoute> {
-            DriverPlaceholderScreen()
+            DriverPlaceholderScreen(onLogout = onLogout)
         }
     }
 }

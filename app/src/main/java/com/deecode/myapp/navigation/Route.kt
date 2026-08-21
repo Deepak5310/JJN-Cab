@@ -17,10 +17,17 @@ sealed interface Route {
     @Serializable
     data object AdminGraph : Route
 
-    // Destinations
+    // Auth Destinations
+    @Serializable
+    data object SplashRoute : Route
+
     @Serializable
     data object LoginRoute : Route
 
+    @Serializable
+    data object RegisterRoute : Route
+
+    // Mode Destinations
     @Serializable
     data object CustomerHomeRoute : Route
 

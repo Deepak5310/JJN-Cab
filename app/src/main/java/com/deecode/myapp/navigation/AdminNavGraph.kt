@@ -12,7 +12,7 @@ fun NavGraphBuilder.adminNavGraph(
         startDestination = Route.AdminDashboardRoute
     ) {
         composable<Route.AdminDashboardRoute> {
-            AdminPlaceholderScreen()
+            AdminPlaceholderScreen(onLogout = onLogout)
         }
     }
 }

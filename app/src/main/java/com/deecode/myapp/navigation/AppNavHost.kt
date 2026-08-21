@@ -18,6 +18,7 @@ fun AppNavHost(
         modifier = modifier
     ) {
         authNavGraph(
+            navController = navController,
             onNavigateToCustomer = {
                 navController.navigate(Route.CustomerGraph) {
                     popUpTo(Route.AuthGraph) { inclusive = true }
