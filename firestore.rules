@@ -23,7 +23,12 @@ service cloud.firestore {
     // Users collection
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow write: if isCustomer(userId) || isAdmin();
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isAuthenticated() && (
+        (isCustomer(userId) && request.resource.data.role == resource.data.role && request.resource.data.uid == resource.data.uid) ||
+        (isAdmin() && request.resource.data.uid == resource.data.uid && request.resource.data.email == resource.data.email)
+      );
+      allow delete: if false;
     }
 
     // Drivers collection
