@@ -32,7 +32,11 @@ data class DriverUiState(
     val activeDriverBooking: Booking? = null,
     val activeCustomerName: String? = null,
     val isUpdatingRideStatus: Boolean = false,
-    val rideStatusError: String? = null
+    val rideStatusError: String? = null,
+    val isRatingSheetVisible: Boolean = false,
+    val isSubmittingRating: Boolean = false,
+    val ratingError: String? = null,
+    val isRatingSubmitted: Boolean = false
 ) : UiState
 
 sealed interface DriverUiEvent : UiEvent {
@@ -49,4 +53,7 @@ sealed interface DriverUiEvent : UiEvent {
     data class CompleteBooking(val bookingId: String) : DriverUiEvent
     data class CancelBooking(val bookingId: String, val reason: String) : DriverUiEvent
     data object ClearRideStatusError : DriverUiEvent
+    data object OpenRatingSheet : DriverUiEvent
+    data object CloseRatingSheet : DriverUiEvent
+    data class SubmitCustomerRating(val rating: Int, val review: String?) : DriverUiEvent
 }

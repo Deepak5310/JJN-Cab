@@ -15,12 +15,14 @@ import com.deecode.myapp.data.repository.BookingRepositoryImpl
 import com.deecode.myapp.data.repository.DriverRepositoryImpl
 import com.deecode.myapp.data.repository.DriverTrackingRepositoryImpl
 import com.deecode.myapp.data.repository.NotificationRepositoryImpl
+import com.deecode.myapp.data.repository.RatingRepositoryImpl
 import com.deecode.myapp.data.repository.UserRepositoryImpl
 import com.deecode.myapp.domain.repository.AuthRepository
 import com.deecode.myapp.domain.repository.BookingRepository
 import com.deecode.myapp.domain.repository.DriverRepository
 import com.deecode.myapp.domain.repository.DriverTrackingRepository
 import com.deecode.myapp.domain.repository.NotificationRepository
+import com.deecode.myapp.domain.repository.RatingRepository
 import com.deecode.myapp.domain.repository.UserRepository
 import dagger.Binds
 import dagger.Module
@@ -73,6 +75,12 @@ abstract class RepositoryModule {
     abstract fun bindNotificationRepository(
         notificationRepositoryImpl: NotificationRepositoryImpl
     ): NotificationRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindRatingRepository(
+        ratingRepositoryImpl: RatingRepositoryImpl
+    ): RatingRepository
 
     @Binds
     @Singleton

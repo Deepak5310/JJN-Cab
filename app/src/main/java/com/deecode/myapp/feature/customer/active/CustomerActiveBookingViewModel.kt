@@ -4,11 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.deecode.myapp.core.result.Resource
 import com.deecode.myapp.domain.model.Booking
+import com.deecode.myapp.domain.model.BookingStatus
 import com.deecode.myapp.domain.model.LocationPoint
 import com.deecode.myapp.domain.repository.AuthRepository
 import com.deecode.myapp.domain.repository.BookingRepository
 import com.deecode.myapp.domain.repository.DriverTrackingRepository
 import com.deecode.myapp.domain.repository.LocationRepository
+import com.deecode.myapp.domain.repository.RatingRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,7 +25,8 @@ class CustomerActiveBookingViewModel @Inject constructor(
     private val bookingRepository: BookingRepository,
     private val authRepository: AuthRepository,
     private val locationRepository: LocationRepository,
-    private val driverTrackingRepository: DriverTrackingRepository
+    private val driverTrackingRepository: DriverTrackingRepository,
+    private val ratingRepository: RatingRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CustomerActiveBookingUiState())
@@ -58,6 +61,7 @@ class CustomerActiveBookingViewModel @Inject constructor(
                             it.copy(
                                 isLoading = false,
                                 booking = booking,
+                                isRatingSubmitted = booking?.customerRating != null,
                                 errorMessage = null
                             )
                         }
@@ -80,24 +84,22 @@ class CustomerActiveBookingViewModel @Inject constructor(
     }
 
     private fun syncDriverTracking(booking: Booking?) {
-        if (booking != null && booking.driverId != null) {
-            if (driverTrackingJob == null || driverTrackingJob?.isActive == false) {
+        val shouldTrack = booking != null &&
+                booking.driverId != null &&
+                (booking.status == BookingStatus.DRIVER_ARRIVING || booking.status == BookingStatus.IN_PROGRESS)
+
+        if (shouldTrack) {
+            if (driverTrackingJob == null || driverTrackingJob?.isActive != true) {
                 driverTrackingJob = viewModelScope.launch {
-                    driverTrackingRepository.observeDriverLocation(booking.bookingId).collect { locRes ->
-                        if (locRes is Resource.Success) {
-                            val loc = locRes.data
-                            _uiState.update {
-                                it.copy(
-                                    driverLocation = loc?.let { dl ->
-                                        LocationPoint(
-                                            latitude = dl.latitude,
-                                            longitude = dl.longitude
-                                        )
-                                    }
-                                )
+                    driverTrackingRepository.observeDriverLocation(booking.bookingId)
+                        .collect { resource ->
+                            if (resource is Resource.Success) {
+                                val loc = resource.data?.let {
+                                    LocationPoint(latitude = it.latitude, longitude = it.longitude)
+                                }
+                                _uiState.update { it.copy(driverLocation = loc) }
                             }
                         }
-                    }
                 }
             }
         } else {
@@ -111,12 +113,58 @@ class CustomerActiveBookingViewModel @Inject constructor(
         when (event) {
             is CustomerActiveBookingUiEvent.Retry -> observeActiveBooking()
             is CustomerActiveBookingUiEvent.ClearError -> _uiState.update { it.copy(errorMessage = null) }
-            is CustomerActiveBookingUiEvent.CancelBooking -> cancelBooking(event.bookingId, event.reason)
+            is CustomerActiveBookingUiEvent.CancelBooking -> cancelRide(event.bookingId, event.reason)
             is CustomerActiveBookingUiEvent.ClearCancellationError -> _uiState.update { it.copy(cancellationError = null) }
+            is CustomerActiveBookingUiEvent.OpenRatingSheet -> _uiState.update { it.copy(isRatingSheetVisible = true, ratingError = null) }
+            is CustomerActiveBookingUiEvent.CloseRatingSheet -> _uiState.update { it.copy(isRatingSheetVisible = false, ratingError = null) }
+            is CustomerActiveBookingUiEvent.SubmitRating -> submitRating(event.rating, event.review)
         }
     }
 
-    private fun cancelBooking(bookingId: String, reason: String) {
+    private fun submitRating(rating: Int, review: String?) {
+        val booking = _uiState.value.booking ?: return
+        val currentUid = authRepository.currentUser?.uid ?: return
+        val driverId = booking.driverId ?: return
+
+        if (_uiState.value.isSubmittingRating) return
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSubmittingRating = true, ratingError = null) }
+
+            val result = ratingRepository.submitRating(
+                bookingId = booking.bookingId,
+                fromUserId = currentUid,
+                toUserId = driverId,
+                role = "CUSTOMER",
+                rating = rating,
+                review = review
+            )
+
+            when (result) {
+                is Resource.Success -> {
+                    _uiState.update {
+                        it.copy(
+                            isSubmittingRating = false,
+                            isRatingSheetVisible = false,
+                            isRatingSubmitted = true,
+                            ratingError = null
+                        )
+                    }
+                }
+                is Resource.Error -> {
+                    _uiState.update {
+                        it.copy(
+                            isSubmittingRating = false,
+                            ratingError = result.message
+                        )
+                    }
+                }
+                is Resource.Loading -> Unit
+            }
+        }
+    }
+
+    private fun cancelRide(bookingId: String, reason: String) {
         if (_uiState.value.isCancelling) return
 
         viewModelScope.launch {

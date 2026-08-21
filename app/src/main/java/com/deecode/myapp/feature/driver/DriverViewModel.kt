@@ -12,6 +12,7 @@ import com.deecode.myapp.domain.repository.DriverRepository
 import com.deecode.myapp.domain.repository.DriverTrackingRepository
 import com.deecode.myapp.domain.repository.LocationRepository
 import com.deecode.myapp.domain.repository.NotificationRepository
+import com.deecode.myapp.domain.repository.RatingRepository
 import com.deecode.myapp.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -30,7 +31,8 @@ class DriverViewModel @Inject constructor(
     private val bookingRepository: BookingRepository,
     private val locationRepository: LocationRepository,
     private val driverTrackingRepository: DriverTrackingRepository,
-    private val notificationRepository: NotificationRepository
+    private val notificationRepository: NotificationRepository,
+    private val ratingRepository: RatingRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DriverUiState())
@@ -241,6 +243,53 @@ class DriverViewModel @Inject constructor(
             is DriverUiEvent.CompleteBooking -> completeBooking(event.bookingId)
             is DriverUiEvent.CancelBooking -> cancelBooking(event.bookingId, event.reason)
             is DriverUiEvent.ClearRideStatusError -> _uiState.update { it.copy(rideStatusError = null) }
+            is DriverUiEvent.OpenRatingSheet -> _uiState.update { it.copy(isRatingSheetVisible = true, ratingError = null) }
+            is DriverUiEvent.CloseRatingSheet -> _uiState.update { it.copy(isRatingSheetVisible = false, ratingError = null) }
+            is DriverUiEvent.SubmitCustomerRating -> submitCustomerRating(event.rating, event.review)
+        }
+    }
+
+    private fun submitCustomerRating(rating: Int, review: String?) {
+        val state = _uiState.value
+        val booking = state.activeDriverBooking ?: return
+        val currentUid = authRepository.currentUser?.uid ?: return
+
+        if (state.isSubmittingRating) return
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSubmittingRating = true, ratingError = null) }
+
+            val result = ratingRepository.submitRating(
+                bookingId = booking.bookingId,
+                fromUserId = currentUid,
+                toUserId = booking.customerId,
+                role = "DRIVER",
+                rating = rating,
+                review = review
+            )
+
+            when (result) {
+                is Resource.Success -> {
+                    _uiState.update {
+                        it.copy(
+                            isSubmittingRating = false,
+                            isRatingSheetVisible = false,
+                            isRatingSubmitted = true,
+                            actionMessage = "Customer rating submitted!",
+                            ratingError = null
+                        )
+                    }
+                }
+                is Resource.Error -> {
+                    _uiState.update {
+                        it.copy(
+                            isSubmittingRating = false,
+                            ratingError = result.message
+                        )
+                    }
+                }
+                is Resource.Loading -> Unit
+            }
         }
     }
 

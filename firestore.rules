@@ -86,5 +86,20 @@ service cloud.firestore {
         request.resource.data.driverId == request.auth.uid &&
         (resource == null || resource.data.driverId == request.auth.uid);
     }
+
+    // Ratings & Reviews collection
+    match /ratings/{ratingId} {
+      // Read: Authenticated users
+      allow read: if isAuthenticated();
+
+      // Create: Authenticated author rating between 1 and 5 stars
+      allow create: if isAuthenticated() &&
+                    request.resource.data.fromUserId == request.auth.uid &&
+                    request.resource.data.rating >= 1 &&
+                    request.resource.data.rating <= 5;
+
+      // No editing or deletion of submitted reviews
+      allow update, delete: if false;
+    }
   }
 }

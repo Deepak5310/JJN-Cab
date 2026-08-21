@@ -92,6 +92,23 @@ fun DriverProfileScreen(
                     )
                 )
             }
+
+            Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
+
+            Box(
+                modifier = Modifier
+                    .clip(MaterialTheme.shapes.small)
+                    .background(MaterialTheme.colorScheme.secondaryContainer)
+                    .padding(horizontal = 8.dp, vertical = 2.dp)
+            ) {
+                Text(
+                    text = if ((user?.ratingCount ?: 0) > 0) "⭐ ${String.format(java.util.Locale.US, "%.1f", user?.ratingAverage)} (${user?.ratingCount})" else "⭐ 5.0 (New)",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))

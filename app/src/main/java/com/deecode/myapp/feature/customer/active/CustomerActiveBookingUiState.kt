@@ -16,6 +16,10 @@ data class CustomerActiveBookingUiState(
     val hasLocationPermission: Boolean = false,
     val isCancelling: Boolean = false,
     val cancellationError: String? = null,
+    val isRatingSheetVisible: Boolean = false,
+    val isSubmittingRating: Boolean = false,
+    val ratingError: String? = null,
+    val isRatingSubmitted: Boolean = false,
     val errorMessage: String? = null
 ) : UiState {
     val formattedFare: String
@@ -57,4 +61,7 @@ sealed interface CustomerActiveBookingUiEvent : UiEvent {
     data object ClearError : CustomerActiveBookingUiEvent
     data class CancelBooking(val bookingId: String, val reason: String) : CustomerActiveBookingUiEvent
     data object ClearCancellationError : CustomerActiveBookingUiEvent
+    data object OpenRatingSheet : CustomerActiveBookingUiEvent
+    data object CloseRatingSheet : CustomerActiveBookingUiEvent
+    data class SubmitRating(val rating: Int, val review: String?) : CustomerActiveBookingUiEvent
 }

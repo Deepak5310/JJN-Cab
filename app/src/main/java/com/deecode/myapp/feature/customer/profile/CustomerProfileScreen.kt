@@ -98,6 +98,11 @@ fun CustomerProfileScreen(
         ) {
             ProfileDetailItem(label = "Phone Number", value = user?.phone?.ifBlank { "Not provided" } ?: "Not provided")
             Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+            ProfileDetailItem(
+                label = "Customer Rating",
+                value = if ((user?.ratingCount ?: 0) > 0) "⭐ ${String.format(Locale.US, "%.1f", user?.ratingAverage)} (${user?.ratingCount} reviews)" else "⭐ 5.0 (New User)"
+            )
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
             ProfileDetailItem(label = "Account Role", value = user?.role?.name ?: "CUSTOMER")
             Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
             ProfileDetailItem(label = "Member Since", value = formattedDate)

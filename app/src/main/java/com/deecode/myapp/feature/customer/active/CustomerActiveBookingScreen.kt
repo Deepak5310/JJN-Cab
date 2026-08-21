@@ -437,11 +437,49 @@ fun CustomerActiveBookingScreen(
 
                 Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
 
-                // Actions: Cancel Ride when Active, or Back to Home when completed/cancelled
+                // Actions: Cancel Ride when Active, or Rate / Back to Home when completed/cancelled
                 if (booking.status.isActive) {
                     JJNOutlinedButton(
                         text = "Cancel Ride",
                         onClick = { showCancelDialog = true },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                } else if (booking.status == BookingStatus.COMPLETED) {
+                    if (uiState.isRatingSubmitted || booking.customerRating != null) {
+                        JJNCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            contentPadding = MaterialTheme.spacing.medium
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Your Rating: ${"★".repeat(booking.customerRating ?: 5)}${"☆".repeat(5 - (booking.customerRating ?: 5))}",
+                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                                )
+                                Text(
+                                    text = "Submitted ✓",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
+                    } else {
+                        JJNOutlinedButton(
+                            text = "Rate your Driver 🌟",
+                            onClick = { viewModel.onEvent(CustomerActiveBookingUiEvent.OpenRatingSheet) },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
+                    }
+
+                    JJNPrimaryButton(
+                        text = "Back to Home",
+                        onClick = onNavigateBack,
                         modifier = Modifier.fillMaxWidth()
                     )
                 } else {
@@ -449,6 +487,19 @@ fun CustomerActiveBookingScreen(
                         text = "Back to Home",
                         onClick = onNavigateBack,
                         modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                if (uiState.isRatingSheetVisible) {
+                    com.deecode.myapp.ui.components.dialog.RatingBottomSheet(
+                        title = "Rate your Driver",
+                        targetName = "your driver",
+                        isSubmitting = uiState.isSubmittingRating,
+                        errorMessage = uiState.ratingError,
+                        onDismiss = { viewModel.onEvent(CustomerActiveBookingUiEvent.CloseRatingSheet) },
+                        onSubmit = { rating, review ->
+                            viewModel.onEvent(CustomerActiveBookingUiEvent.SubmitRating(rating, review))
+                        }
                     )
                 }
 

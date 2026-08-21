@@ -18,5 +18,9 @@ data class Booking(
     val finalDurationSeconds: Long? = null,
     val cancelledAt: Long? = null,
     val cancelledBy: String? = null,
-    val cancellationReason: String? = null
+    val cancellationReason: String? = null,
+    val customerRating: Int? = null,
+    val customerReview: String? = null,
+    val driverRating: Int? = null,
+    val driverReview: String? = null
 )

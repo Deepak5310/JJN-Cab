@@ -338,6 +338,38 @@ fun CustomerRideDetailsScreen(
                     }
                 }
 
+                // Rating Review Card (if rated)
+                if (booking.customerRating != null) {
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+                    JJNOutlinedCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = MaterialTheme.spacing.medium
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Your Rating",
+                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            )
+                            Text(
+                                text = "${"★".repeat(booking.customerRating)}${"☆".repeat(5 - booking.customerRating)}",
+                                color = Color(0xFFFFB300),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
+                        if (!booking.customerReview.isNullOrBlank()) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "\"${booking.customerReview}\"",
+                                style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            )
+                        }
+                    }
+                }
+
                 // Cancellation Details (if cancelled)
                 if (booking.status in setOf(BookingStatus.CANCELLED, BookingStatus.CANCELLED_BY_CUSTOMER, BookingStatus.CANCELLED_BY_DRIVER)) {
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))

@@ -50,7 +50,11 @@ data class BookingDto(
     @ServerTimestamp
     val cancelledAt: Timestamp? = null,
     val cancelledBy: String? = null,
-    val cancellationReason: String? = null
+    val cancellationReason: String? = null,
+    val customerRating: Int? = null,
+    val customerReview: String? = null,
+    val driverRating: Int? = null,
+    val driverReview: String? = null
 ) {
     fun toDomain(): Booking = Booking(
         bookingId = bookingId,
@@ -80,7 +84,11 @@ data class BookingDto(
         finalDurationSeconds = finalDurationSeconds,
         cancelledAt = cancelledAt?.toDate()?.time,
         cancelledBy = cancelledBy,
-        cancellationReason = cancellationReason
+        cancellationReason = cancellationReason,
+        customerRating = customerRating,
+        customerReview = customerReview,
+        driverRating = driverRating,
+        driverReview = driverReview
     )
 
     companion object {
@@ -98,7 +106,11 @@ data class BookingDto(
             finalDistanceMeters = booking.finalDistanceMeters,
             finalDurationSeconds = booking.finalDurationSeconds,
             cancelledBy = booking.cancelledBy,
-            cancellationReason = booking.cancellationReason
+            cancellationReason = booking.cancellationReason,
+            customerRating = booking.customerRating,
+            customerReview = booking.customerReview,
+            driverRating = booking.driverRating,
+            driverReview = booking.driverReview
         )
     }
 }

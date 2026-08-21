@@ -8,6 +8,9 @@ data class User(
     val email: String,
     val phone: String = "",
     val role: UserRole = UserRole.CUSTOMER,
+    val ratingAverage: Double = 5.0,
+    val ratingCount: Int = 0,
+    val totalRatingSum: Double = 0.0,
     val createdAt: Long? = null,
     val updatedAt: Long? = null
 )
