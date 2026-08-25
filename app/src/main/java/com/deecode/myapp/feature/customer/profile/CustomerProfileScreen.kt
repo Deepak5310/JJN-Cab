@@ -39,9 +39,9 @@ import java.util.Locale
 
 @Composable
 fun CustomerProfileScreen(
-    onNavigateToSettings: () -> Unit = {},
     onLogout: () -> Unit,
     modifier: Modifier = Modifier,
+    onNavigateToSettings: () -> Unit = {},
     viewModel: CustomerProfileViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()

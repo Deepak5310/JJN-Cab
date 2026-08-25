@@ -48,16 +48,17 @@ fun DriverDetailBottomSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scrollState = rememberScrollState()
 
-    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.Builder().setLanguage("en").setRegion("IN").build()).apply {
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("en-IN")).apply {
         maximumFractionDigits = 0
     }
 
     val formattedJoinedDate = if ((driver.user.createdAt ?: 0L) > 0L) {
-        SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(driver.user.createdAt!!))
+        SimpleDateFormat("dd MMM yyyy", locale).format(Date(driver.user.createdAt!!))
     } else "Recent"
 
     val formattedStatusDate = if ((driver.user.statusChangedAt ?: 0L) > 0L) {
-        SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(Date(driver.user.statusChangedAt!!))
+        SimpleDateFormat("dd MMM yyyy, hh:mm a", locale).format(Date(driver.user.statusChangedAt!!))
     } else null
 
     ModalBottomSheet(

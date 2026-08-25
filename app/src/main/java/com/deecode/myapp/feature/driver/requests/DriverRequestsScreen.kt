@@ -269,7 +269,8 @@ private fun BookingRequestCard(
     onReject: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val timeFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    val timeFormat = SimpleDateFormat("hh:mm a", locale)
     val requestedTime = if (booking.createdAt > 0L) {
         timeFormat.format(Date(booking.createdAt))
     } else {

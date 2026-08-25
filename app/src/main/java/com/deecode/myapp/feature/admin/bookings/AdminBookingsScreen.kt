@@ -299,12 +299,13 @@ private fun AdminBookingCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.Builder().setLanguage("en").setRegion("IN").build()).apply {
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("en-IN")).apply {
         maximumFractionDigits = 0
     }
 
     val formattedDate = if (booking.createdAt > 0L) {
-        SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()).format(Date(booking.createdAt))
+        SimpleDateFormat("dd MMM, hh:mm a", locale).format(Date(booking.createdAt))
     } else ""
 
     val fare = booking.finalFare ?: booking.estimatedFare

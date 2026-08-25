@@ -39,10 +39,10 @@ import java.util.Locale
 
 @Composable
 fun DriverProfileScreen(
-    onManageVehicle: () -> Unit = {},
-    onNavigateToSettings: () -> Unit = {},
     onLogout: () -> Unit,
     modifier: Modifier = Modifier,
+    onManageVehicle: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
     viewModel: DriverProfileViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()

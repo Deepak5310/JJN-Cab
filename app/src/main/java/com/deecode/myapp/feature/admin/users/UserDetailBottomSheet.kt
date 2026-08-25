@@ -51,12 +51,14 @@ fun UserDetailBottomSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scrollState = rememberScrollState()
 
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+
     val formattedJoinedDate = if ((user.createdAt ?: 0L) > 0L) {
-        SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(Date(user.createdAt!!))
+        SimpleDateFormat("dd MMM yyyy, hh:mm a", locale).format(Date(user.createdAt!!))
     } else "Unknown"
 
     val formattedStatusDate = if ((user.statusChangedAt ?: 0L) > 0L) {
-        SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(Date(user.statusChangedAt!!))
+        SimpleDateFormat("dd MMM yyyy, hh:mm a", locale).format(Date(user.statusChangedAt!!))
     } else null
 
     ModalBottomSheet(

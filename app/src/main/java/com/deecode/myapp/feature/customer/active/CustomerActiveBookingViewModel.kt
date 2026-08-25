@@ -216,7 +216,6 @@ class CustomerActiveBookingViewModel @Inject constructor(
     }
 
     override fun onCleared() {
-        super.onCleared()
         driverTrackingJob?.cancel()
         driverVehicleJob?.cancel()
     }

@@ -37,8 +37,8 @@ import com.deecode.myapp.ui.theme.spacing
 @Composable
 fun AdminAppShell(
     onLogout: () -> Unit,
-    onNavigateToSettings: () -> Unit = {},
     modifier: Modifier = Modifier,
+    onNavigateToSettings: () -> Unit = {},
     viewModel: AdminViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()

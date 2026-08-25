@@ -156,9 +156,11 @@ fun JJNMap(
             // Pickup Marker
             if (pickupLocation != null) {
                 Marker(
-                    state = MarkerState(
-                        position = LatLng(pickupLocation.latitude, pickupLocation.longitude)
-                    ),
+                    state = remember(pickupLocation.latitude, pickupLocation.longitude) {
+                        MarkerState(
+                            position = LatLng(pickupLocation.latitude, pickupLocation.longitude)
+                        )
+                    },
                     title = "Pickup Location",
                     snippet = pickupLocation.address ?: "Selected Pickup",
                     icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
@@ -168,9 +170,11 @@ fun JJNMap(
             // Destination Marker
             if (destinationLocation != null) {
                 Marker(
-                    state = MarkerState(
-                        position = LatLng(destinationLocation.latitude, destinationLocation.longitude)
-                    ),
+                    state = remember(destinationLocation.latitude, destinationLocation.longitude) {
+                        MarkerState(
+                            position = LatLng(destinationLocation.latitude, destinationLocation.longitude)
+                        )
+                    },
                     title = "Destination",
                     snippet = destinationLocation.address ?: "Selected Destination",
                     icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
@@ -180,9 +184,11 @@ fun JJNMap(
             // Driver Live Location Marker
             if (driverLocation != null) {
                 Marker(
-                    state = MarkerState(
-                        position = LatLng(driverLocation.latitude, driverLocation.longitude)
-                    ),
+                    state = remember(driverLocation.latitude, driverLocation.longitude) {
+                        MarkerState(
+                            position = LatLng(driverLocation.latitude, driverLocation.longitude)
+                        )
+                    },
                     title = "Your Cab 🚖",
                     snippet = "Driver Live Location",
                     icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)

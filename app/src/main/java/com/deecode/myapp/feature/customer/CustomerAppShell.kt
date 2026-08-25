@@ -23,10 +23,10 @@ import com.deecode.myapp.ui.components.JJNLoadingIndicator
 @Composable
 fun CustomerAppShell(
     onLogout: () -> Unit,
+    modifier: Modifier = Modifier,
     onNavigateToSettings: () -> Unit = {},
     onNavigateToActiveBooking: () -> Unit = {},
     onNavigateToRideDetails: (String) -> Unit = {},
-    modifier: Modifier = Modifier,
     viewModel: CustomerViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()

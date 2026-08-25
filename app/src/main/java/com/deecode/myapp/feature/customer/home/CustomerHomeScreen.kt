@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
+import java.util.Locale
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -434,7 +435,7 @@ fun CustomerHomeScreen(
                         }
                     } else if (pickupLocation != null) {
                         Text(
-                            text = pickupLocation.address ?: "Lat: ${String.format("%.4f", pickupLocation.latitude)}, Lng: ${String.format("%.4f", pickupLocation.longitude)}",
+                            text = pickupLocation.address ?: "Lat: ${String.format(Locale.US, "%.4f", pickupLocation.latitude)}, Lng: ${String.format(Locale.US, "%.4f", pickupLocation.longitude)}",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -493,7 +494,7 @@ fun CustomerHomeScreen(
                     )
                     if (destinationLocation != null) {
                         Text(
-                            text = destinationLocation.address ?: "Lat: ${String.format("%.4f", destinationLocation.latitude)}, Lng: ${String.format("%.4f", destinationLocation.longitude)}",
+                            text = destinationLocation.address ?: "Lat: ${String.format(Locale.US, "%.4f", destinationLocation.latitude)}, Lng: ${String.format(Locale.US, "%.4f", destinationLocation.longitude)}",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -668,7 +669,7 @@ fun CustomerHomeScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "Distance (${String.format("%.1f", selectedFare.distanceKm)} km)",
+                            text = "Distance (${String.format(Locale.US, "%.1f", selectedFare.distanceKm)} km)",
                             style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
                         )
                         Text(

@@ -41,7 +41,17 @@ class DefaultLocationDataSource @Inject constructor(
     }
 
     override suspend fun getCurrentLocation(): Resource<LocationPoint> {
-        if (!hasLocationPermission()) {
+        val fineLocationGranted = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        val coarseLocationGranted = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (!fineLocationGranted && !coarseLocationGranted) {
             return Resource.Error("Location permission is required to fetch your current position.")
         }
 
@@ -70,6 +80,8 @@ class DefaultLocationDataSource @Inject constructor(
             } else {
                 Resource.Error("Could not retrieve current location. Please try again.")
             }
+        } catch (e: SecurityException) {
+            Resource.Error("Location permission was denied: ${e.localizedMessage}", e)
         } catch (e: Exception) {
             Resource.Error(e.localizedMessage ?: "Failed to get current location", e)
         }
@@ -79,8 +91,18 @@ class DefaultLocationDataSource @Inject constructor(
         intervalMs: Long,
         minDistanceMeters: Float
     ): Flow<LocationPoint> = callbackFlow {
-        if (!hasLocationPermission()) {
-            close(IllegalStateException("Location permission not granted."))
+        val fineLocationGranted = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        val coarseLocationGranted = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (!fineLocationGranted && !coarseLocationGranted) {
+            close(SecurityException("Location permission not granted."))
             return@callbackFlow
         }
 
@@ -100,11 +122,16 @@ class DefaultLocationDataSource @Inject constructor(
             }
         }
 
-        fusedLocationProviderClient.requestLocationUpdates(
-            locationRequest,
-            locationCallback,
-            Looper.getMainLooper()
-        )
+        try {
+            fusedLocationProviderClient.requestLocationUpdates(
+                locationRequest,
+                locationCallback,
+                Looper.getMainLooper()
+            )
+        } catch (e: SecurityException) {
+            close(e)
+            return@callbackFlow
+        }
 
         awaitClose {
             fusedLocationProviderClient.removeLocationUpdates(locationCallback)

@@ -498,7 +498,6 @@ class DriverViewModel @Inject constructor(
     }
 
     override fun onCleared() {
-        super.onCleared()
         stopLocationTracking()
     }
 }

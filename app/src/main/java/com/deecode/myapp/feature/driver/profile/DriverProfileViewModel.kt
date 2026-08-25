@@ -188,7 +188,6 @@ class DriverProfileViewModel @Inject constructor(
     }
 
     override fun onCleared() {
-        super.onCleared()
         profileJob?.cancel()
         bookingsJob?.cancel()
         vehicleJob?.cancel()

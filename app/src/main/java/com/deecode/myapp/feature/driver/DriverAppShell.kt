@@ -37,8 +37,8 @@ import com.deecode.myapp.ui.theme.JJNTheme
 @Composable
 fun DriverAppShell(
     onLogout: () -> Unit,
-    onNavigateToSettings: () -> Unit = {},
     modifier: Modifier = Modifier,
+    onNavigateToSettings: () -> Unit = {},
     viewModel: DriverViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()

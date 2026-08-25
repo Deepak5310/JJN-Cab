@@ -60,20 +60,21 @@ fun AdminBookingDetailBottomSheet(
     var showCancelConfirmDialog by remember { mutableStateOf(false) }
     var cancelReason by remember { mutableStateOf("Operational disruption / Fleet safety") }
 
-    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.Builder().setLanguage("en").setRegion("IN").build()).apply {
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("en-IN")).apply {
         maximumFractionDigits = 0
     }
 
     val formattedCreatedDate = if (booking.createdAt > 0L) {
-        SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(Date(booking.createdAt))
+        SimpleDateFormat("dd MMM yyyy, hh:mm a", locale).format(Date(booking.createdAt))
     } else "Unknown"
 
     val formattedCompletedDate = if ((booking.completedAt ?: 0L) > 0L) {
-        SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(Date(booking.completedAt!!))
+        SimpleDateFormat("dd MMM yyyy, hh:mm a", locale).format(Date(booking.completedAt!!))
     } else null
 
     val formattedCancelledDate = if ((booking.cancelledAt ?: 0L) > 0L) {
-        SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(Date(booking.cancelledAt!!))
+        SimpleDateFormat("dd MMM yyyy, hh:mm a", locale).format(Date(booking.cancelledAt!!))
     } else null
 
     val distanceKm = (booking.finalDistanceMeters ?: booking.distanceMeters) / 1000.0

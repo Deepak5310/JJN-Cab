@@ -143,7 +143,6 @@ class CustomerRideDetailsViewModel @Inject constructor(
     }
 
     override fun onCleared() {
-        super.onCleared()
         detailsJob?.cancel()
         vehicleJob?.cancel()
     }

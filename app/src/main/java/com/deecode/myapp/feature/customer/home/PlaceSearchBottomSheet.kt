@@ -47,12 +47,12 @@ fun PlaceSearchBottomSheet(
     searchQuery: String,
     isSearching: Boolean,
     suggestions: List<PlaceSuggestion>,
-    errorMessage: String? = null,
     onQueryChange: (String) -> Unit,
     onSelectSuggestion: (PlaceSuggestion) -> Unit,
     onSelectOnMap: () -> Unit,
     onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    errorMessage: String? = null
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val focusRequester = remember { FocusRequester() }

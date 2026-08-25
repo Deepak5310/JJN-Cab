@@ -33,9 +33,9 @@ import com.deecode.myapp.ui.theme.spacing
 @Composable
 fun AdminProfileScreen(
     user: User?,
-    onNavigateToSettings: () -> Unit = {},
     onLogout: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onNavigateToSettings: () -> Unit = {}
 ) {
     val scrollState = rememberScrollState()
     val adminName = user?.name ?: "System Administrator"
