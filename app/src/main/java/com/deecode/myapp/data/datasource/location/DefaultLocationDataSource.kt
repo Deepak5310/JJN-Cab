@@ -1,7 +1,6 @@
 package com.deecode.myapp.data.datasource.location
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.LocationManager
@@ -76,7 +75,6 @@ class DefaultLocationDataSource @Inject constructor(
         }
     }
 
-    @SuppressLint("MissingPermission")
     override fun observeLocationUpdates(
         intervalMs: Long,
         minDistanceMeters: Float

@@ -96,7 +96,6 @@ class DefaultPlacesDataSource @Inject constructor(
                     })
                 }
             } else {
-                @Suppress("DEPRECATION")
                 val addresses = geocoder.getFromLocation(latitude, longitude, 1)
                 val address = addresses?.firstOrNull()?.getAddressLine(0)
                     ?: String.format(Locale.US, "%.4f, %.4f", latitude, longitude)
