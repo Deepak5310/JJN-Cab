@@ -51,7 +51,7 @@ fun DriverRequestsScreen(
     onRefresh: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val currencyFormat = NumberFormat.getCurrencyInstance(Locale("en", "IN")).apply {
+    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("en-IN")).apply {
         maximumFractionDigits = 0
     }
 
@@ -270,7 +270,7 @@ private fun BookingRequestCard(
     modifier: Modifier = Modifier
 ) {
     val timeFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
-    val requestedTime = if (booking.createdAt != null && booking.createdAt > 0L) {
+    val requestedTime = if (booking.createdAt > 0L) {
         timeFormat.format(Date(booking.createdAt))
     } else {
         "Just now"

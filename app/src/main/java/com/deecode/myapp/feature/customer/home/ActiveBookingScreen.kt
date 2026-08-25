@@ -40,7 +40,7 @@ fun ActiveBookingScreen(
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
-    val currencyFormat = NumberFormat.getCurrencyInstance(Locale("en", "IN")).apply {
+    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("en-IN")).apply {
         maximumFractionDigits = 0
     }
 

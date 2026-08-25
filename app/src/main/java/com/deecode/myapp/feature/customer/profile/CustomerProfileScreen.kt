@@ -27,14 +27,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.deecode.myapp.ui.components.JJNCard
 import com.deecode.myapp.ui.components.JJNLoadingIndicator
 import com.deecode.myapp.ui.components.JJNOutlinedButton
 import com.deecode.myapp.ui.components.JJNOutlinedCard
 import com.deecode.myapp.ui.components.JJNPrimaryButton
-import com.deecode.myapp.ui.theme.spacing
+import com.deecode.myapp.ui.theme.JJNTheme
 import java.util.Locale
 
 @Composable
@@ -59,7 +59,7 @@ fun CustomerProfileScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .verticalScroll(scrollState)
-            .padding(MaterialTheme.spacing.large),
+            .padding(JJNTheme.spacing.large),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(16.dp))
@@ -81,7 +81,7 @@ fun CustomerProfileScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+        Spacer(modifier = Modifier.height(JJNTheme.spacing.medium))
 
         Text(
             text = user?.name?.ifBlank { "Customer" } ?: "Customer",
@@ -98,7 +98,7 @@ fun CustomerProfileScreen(
             )
         )
 
-        Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
+        Spacer(modifier = Modifier.height(JJNTheme.spacing.small))
 
         // Rating Badge
         Box(
@@ -116,16 +116,16 @@ fun CustomerProfileScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
+        Spacer(modifier = Modifier.height(JJNTheme.spacing.large))
 
         // Quick Stats Summary Row
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
+            horizontalArrangement = Arrangement.spacedBy(JJNTheme.spacing.small)
         ) {
             JJNOutlinedCard(
                 modifier = Modifier.weight(1f),
-                contentPadding = MaterialTheme.spacing.medium
+                contentPadding = JJNTheme.spacing.medium
             ) {
                 Text(
                     text = "Total Rides",
@@ -139,7 +139,7 @@ fun CustomerProfileScreen(
 
             JJNOutlinedCard(
                 modifier = Modifier.weight(1f),
-                contentPadding = MaterialTheme.spacing.medium
+                contentPadding = JJNTheme.spacing.medium
             ) {
                 Text(
                     text = "Member Since",
@@ -152,7 +152,7 @@ fun CustomerProfileScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+        Spacer(modifier = Modifier.height(JJNTheme.spacing.medium))
 
         // Success Banner
         if (!uiState.successMessage.isNullOrBlank()) {
@@ -160,7 +160,7 @@ fun CustomerProfileScreen(
                 modifier = Modifier.fillMaxWidth(),
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                contentPadding = MaterialTheme.spacing.small
+                contentPadding = JJNTheme.spacing.small
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -176,7 +176,7 @@ fun CustomerProfileScreen(
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
+            Spacer(modifier = Modifier.height(JJNTheme.spacing.small))
         }
 
         // Error Banner
@@ -185,7 +185,7 @@ fun CustomerProfileScreen(
                 modifier = Modifier.fillMaxWidth(),
                 containerColor = MaterialTheme.colorScheme.errorContainer,
                 contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                contentPadding = MaterialTheme.spacing.small
+                contentPadding = JJNTheme.spacing.small
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -201,7 +201,7 @@ fun CustomerProfileScreen(
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
+            Spacer(modifier = Modifier.height(JJNTheme.spacing.small))
         }
 
         // Profile Details / Edit Card
@@ -209,7 +209,7 @@ fun CustomerProfileScreen(
             // Edit Mode Form
             JJNOutlinedCard(
                 modifier = Modifier.fillMaxWidth(),
-                contentPadding = MaterialTheme.spacing.large
+                contentPadding = JJNTheme.spacing.large
             ) {
                 Text(
                     text = "Edit Profile",
@@ -219,7 +219,7 @@ fun CustomerProfileScreen(
                     )
                 )
 
-                Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+                Spacer(modifier = Modifier.height(JJNTheme.spacing.medium))
 
                 OutlinedTextField(
                     value = uiState.editName,
@@ -231,7 +231,7 @@ fun CustomerProfileScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+                Spacer(modifier = Modifier.height(JJNTheme.spacing.medium))
 
                 OutlinedTextField(
                     value = uiState.editPhone,
@@ -244,7 +244,7 @@ fun CustomerProfileScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
+                Spacer(modifier = Modifier.height(JJNTheme.spacing.small))
 
                 // Immutable Email Info Note
                 Row(
@@ -263,11 +263,11 @@ fun CustomerProfileScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
+                Spacer(modifier = Modifier.height(JJNTheme.spacing.large))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
+                    horizontalArrangement = Arrangement.spacedBy(JJNTheme.spacing.small)
                 ) {
                     JJNOutlinedButton(
                         text = "Cancel",
@@ -287,7 +287,7 @@ fun CustomerProfileScreen(
             // View Mode Card
             JJNCard(
                 modifier = Modifier.fillMaxWidth(),
-                contentPadding = MaterialTheme.spacing.large
+                contentPadding = JJNTheme.spacing.large
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -305,32 +305,32 @@ fun CustomerProfileScreen(
                     )
                 }
 
-                HorizontalDivider(modifier = Modifier.padding(vertical = MaterialTheme.spacing.medium))
+                HorizontalDivider(modifier = Modifier.padding(vertical = JJNTheme.spacing.medium))
 
                 ProfileDetailItem(label = "Full Name", value = user?.name?.ifBlank { "Not provided" } ?: "Not provided")
-                Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+                Spacer(modifier = Modifier.height(JJNTheme.spacing.medium))
 
                 ProfileDetailItem(label = "Email Address", value = user?.email ?: "Not provided")
-                Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+                Spacer(modifier = Modifier.height(JJNTheme.spacing.medium))
 
                 ProfileDetailItem(label = "Phone Number", value = user?.phone?.ifBlank { "Not provided" } ?: "Not provided")
-                Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+                Spacer(modifier = Modifier.height(JJNTheme.spacing.medium))
 
                 ProfileDetailItem(label = "Account Role", value = user?.role?.name ?: "CUSTOMER")
-                Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+                Spacer(modifier = Modifier.height(JJNTheme.spacing.medium))
 
                 ProfileDetailItem(label = "User ID", value = "#${user?.uid?.take(10) ?: ""}...")
             }
         }
 
-        Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
+        Spacer(modifier = Modifier.height(JJNTheme.spacing.large))
 
         // Settings Button
         JJNCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable(onClick = onNavigateToSettings),
-            contentPadding = MaterialTheme.spacing.medium
+            contentPadding = JJNTheme.spacing.medium
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -339,7 +339,7 @@ fun CustomerProfileScreen(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(text = "⚙️", style = MaterialTheme.typography.titleMedium)
-                    Spacer(modifier = Modifier.width(MaterialTheme.spacing.medium))
+                    Spacer(modifier = Modifier.width(JJNTheme.spacing.medium))
                     Text(
                         text = "App Settings (Theme, Alerts & Info)",
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)
@@ -356,7 +356,7 @@ fun CustomerProfileScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+        Spacer(modifier = Modifier.height(JJNTheme.spacing.medium))
 
         // Sign Out Button
         JJNOutlinedButton(
@@ -365,7 +365,7 @@ fun CustomerProfileScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
+        Spacer(modifier = Modifier.height(JJNTheme.spacing.large))
     }
 }
 

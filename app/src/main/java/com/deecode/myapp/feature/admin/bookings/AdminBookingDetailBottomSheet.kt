@@ -232,7 +232,7 @@ fun AdminBookingDetailBottomSheet(
                     }
                     if (!booking.cancelledBy.isNullOrBlank()) {
                         Text(
-                            text = "Cancelled by: #${booking.cancelledBy?.takeLast(8)}",
+                            text = "Cancelled by: #${booking.cancelledBy.takeLast(8)}",
                             style = MaterialTheme.typography.labelSmall
                         )
                     }

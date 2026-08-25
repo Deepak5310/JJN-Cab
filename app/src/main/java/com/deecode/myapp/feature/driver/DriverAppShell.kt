@@ -23,7 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.deecode.myapp.feature.driver.activeride.DriverActiveRideScreen
 import com.deecode.myapp.feature.driver.dashboard.DriverDashboardScreen
@@ -32,7 +32,7 @@ import com.deecode.myapp.feature.driver.requests.DriverRequestsScreen
 import com.deecode.myapp.feature.driver.vehicle.DriverVehicleScreen
 import com.deecode.myapp.ui.components.JJNLoadingIndicator
 import com.deecode.myapp.ui.components.JJNOutlinedButton
-import com.deecode.myapp.ui.theme.spacing
+import com.deecode.myapp.ui.theme.JJNTheme
 
 @Composable
 fun DriverAppShell(
@@ -54,7 +54,7 @@ fun DriverAppShell(
             modifier = modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .padding(MaterialTheme.spacing.large),
+                .padding(JJNTheme.spacing.large),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(60.dp))
@@ -68,7 +68,7 @@ fun DriverAppShell(
                 Text(text = "🔒", style = MaterialTheme.typography.headlineLarge)
             }
 
-            Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
+            Spacer(modifier = Modifier.height(JJNTheme.spacing.large))
 
             Text(
                 text = "Access Restricted",
@@ -78,7 +78,7 @@ fun DriverAppShell(
                 )
             )
 
-            Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
+            Spacer(modifier = Modifier.height(JJNTheme.spacing.small))
 
             Text(
                 text = "Your account does not have Driver privileges. Please log in with an authorized Driver account.",
@@ -86,7 +86,7 @@ fun DriverAppShell(
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
 
-            Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
+            Spacer(modifier = Modifier.height(JJNTheme.spacing.large))
 
             JJNOutlinedButton(
                 text = "Switch Account / Logout",

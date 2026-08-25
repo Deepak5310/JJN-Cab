@@ -15,28 +15,28 @@ data class FareBreakdown(
 ) {
     val formattedTotalFare: String
         get() {
-            val format = NumberFormat.getCurrencyInstance(Locale("en", "IN"))
+            val format = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("en-IN"))
             format.maximumFractionDigits = 0
             return format.format(totalFare)
         }
 
     val formattedBaseFare: String
         get() {
-            val format = NumberFormat.getCurrencyInstance(Locale("en", "IN"))
+            val format = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("en-IN"))
             format.maximumFractionDigits = 0
             return format.format(baseFare)
         }
 
     val formattedDistanceCharge: String
         get() {
-            val format = NumberFormat.getCurrencyInstance(Locale("en", "IN"))
+            val format = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("en-IN"))
             format.maximumFractionDigits = 0
             return format.format(distanceCharge)
         }
 
     val formattedTimeCharge: String
         get() {
-            val format = NumberFormat.getCurrencyInstance(Locale("en", "IN"))
+            val format = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("en-IN"))
             format.maximumFractionDigits = 0
             return format.format(timeCharge)
         }
