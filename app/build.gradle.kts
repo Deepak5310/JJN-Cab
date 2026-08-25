@@ -78,9 +78,5 @@ dependencies {
     implementation(libs.maps.compose)
     implementation(libs.places)
 
-    // Testing
-    testImplementation(libs.junit)
-
-    debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }

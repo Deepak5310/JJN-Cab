@@ -58,5 +58,5 @@ captures/
 # Google Services (e.g. APIs or Firebase)
 google-services.json
 
-# macOS
-.DS_Store
+# Kotlin
+.kotlin/
